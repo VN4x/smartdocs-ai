@@ -8,6 +8,7 @@ import {
   deleteDocument,
   updateDocument,
   isPreviewable,
+  isCurrentUserAdmin,
   formatBytes,
   extOf,
 } from "@/lib/documents";
