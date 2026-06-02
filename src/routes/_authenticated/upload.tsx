@@ -51,7 +51,12 @@ function UploadPage() {
   const materialOptions = useMemo(() => distinctValues(docs, "materjal"), [docs]);
   const supplierOptions = useMemo(() => distinctValues(docs, "supplier"), [docs]);
 
+  const fetchFromUrl = useServerFn(fetchDocumentFromUrl);
+
   const [file, setFile] = useState<File | null>(null);
+  const [remote, setRemote] = useState<RemoteFile | null>(null);
+  const [url, setUrl] = useState("");
+  const [fetching, setFetching] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -66,12 +71,48 @@ function UploadPage() {
     tags: "",
   });
 
-  function pick(f: File | null) {
-    setFile(f);
-    if (f && !form.title) {
-      setForm((s) => ({ ...s, title: f.name.replace(/\.[^.]+$/, "") }));
+  const selectedName = file?.name ?? remote?.file_name ?? null;
+  const selectedSize = file?.size ?? remote?.file_size ?? null;
+
+  function prefillTitle(name: string) {
+    if (!form.title) {
+      setForm((s) => ({ ...s, title: name.replace(/\.[^.]+$/, "") }));
     }
   }
+
+  function pick(f: File | null) {
+    setFile(f);
+    if (f) {
+      setRemote(null);
+      prefillTitle(f.name);
+    }
+  }
+
+  function clearSelection() {
+    setFile(null);
+    setRemote(null);
+  }
+
+  async function handleFetchUrl() {
+    const trimmed = url.trim();
+    if (!trimmed) {
+      toast.error("Paste a link first.");
+      return;
+    }
+    setFetching(true);
+    try {
+      const result = await fetchFromUrl({ data: { url: trimmed } });
+      setRemote(result);
+      setFile(null);
+      prefillTitle(result.file_name);
+      toast.success("File fetched from link.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't fetch that link.");
+    } finally {
+      setFetching(false);
+    }
+  }
+
 
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((s) => ({ ...s, [key]: value }));
