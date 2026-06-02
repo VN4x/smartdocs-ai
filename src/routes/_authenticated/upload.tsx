@@ -205,7 +205,9 @@ function UploadPage() {
         materjal: form.materjal.trim() || null,
         supplier: form.supplier.trim() || null,
         doc_date: form.doc_date || null,
+        folder_id: folderId === "__none__" ? null : folderId,
         tags,
+
         file_path: stored.path,
         file_name: stored.file_name,
         file_size: stored.file_size,
