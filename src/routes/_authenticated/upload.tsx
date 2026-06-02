@@ -120,8 +120,8 @@ function UploadPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!file) {
-      toast.error("Please choose a file to upload.");
+    if (!file && !remote) {
+      toast.error("Please choose a file or fetch one from a link.");
       return;
     }
     if (!form.title.trim()) {
@@ -130,7 +130,20 @@ function UploadPage() {
     }
     setSaving(true);
     try {
-      const { path } = await uploadFile(file);
+      // Local file → upload now. Remote file → already stored by the server.
+      const stored = remote
+        ? remote
+        : await (async () => {
+            const { path } = await uploadFile(file!);
+            return {
+              path,
+              file_name: file!.name,
+              file_size: file!.size,
+              mime_type: file!.type || null,
+              original_ext: extOf(file!.name) || null,
+            };
+          })();
+
       if (form.tuup.trim()) await ensureDocumentType(form.tuup);
       const tags = form.tags
         .split(",")
@@ -146,11 +159,11 @@ function UploadPage() {
         supplier: form.supplier.trim() || null,
         doc_date: form.doc_date || null,
         tags,
-        file_path: path,
-        file_name: file.name,
-        file_size: file.size,
-        mime_type: file.type || null,
-        original_ext: extOf(file.name) || null,
+        file_path: stored.path,
+        file_name: stored.file_name,
+        file_size: stored.file_size,
+        mime_type: stored.mime_type,
+        original_ext: stored.original_ext,
       });
       await queryClient.invalidateQueries({ queryKey: ["documents"] });
       await queryClient.invalidateQueries({ queryKey: ["document_types"] });
@@ -162,6 +175,7 @@ function UploadPage() {
       setSaving(false);
     }
   }
+
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
