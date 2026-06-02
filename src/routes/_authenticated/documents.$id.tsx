@@ -404,6 +404,8 @@ function EditForm({
   onDone: () => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const [folderId, setFolderId] = useState<string>(doc.folder_id ?? "__none__");
+  const { data: folders = [] } = useQuery({ queryKey: ["folders"], queryFn: listFolders });
   const [form, setForm] = useState({
     title: doc.title,
     description: doc.description ?? "",
@@ -415,6 +417,7 @@ function EditForm({
     doc_date: doc.doc_date ?? "",
     tags: (doc.tags ?? []).join(", "),
   });
+
 
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((s) => ({ ...s, [key]: value }));
