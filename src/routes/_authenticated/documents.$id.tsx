@@ -8,6 +8,7 @@ import {
   deleteDocument,
   updateDocument,
   isPreviewable,
+  isCurrentUserAdmin,
   formatBytes,
   extOf,
 } from "@/lib/documents";
@@ -58,6 +59,17 @@ export const Route = createFileRoute("/_authenticated/documents/$id")({
   ),
 });
 
+/** Escape a string for safe interpolation into raw HTML. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+
 function DetailPage() {
   const { id } = useParams({ from: "/_authenticated/documents/$id" });
   const navigate = useNavigate();
@@ -74,6 +86,11 @@ function DetailPage() {
   const { data: doc, isLoading } = useQuery({
     queryKey: ["documents", id],
     queryFn: () => getDocument(id),
+  });
+
+  const { data: isAdmin = false } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: isCurrentUserAdmin,
   });
 
   useEffect(() => {
@@ -108,11 +125,15 @@ function DetailPage() {
         toast.error("Allow pop-ups to print this document.");
         return;
       }
+      // Escape any value interpolated into the raw HTML string to prevent
+      // stored XSS via a maliciously named document.
+      const safeUrl = encodeURI(url).replace(/"/g, "%22");
+      const safeTitle = escapeHtml(doc.title);
       const body = isImage
-        ? `<img src="${url}" onload="setTimeout(() => window.print(), 200)" style="max-width:100%;height:auto;display:block;margin:0 auto" />`
-        : `<iframe src="${url}" onload="setTimeout(() => window.print(), 400)" style="border:0;width:100%;height:100vh"></iframe>`;
+        ? `<img src="${safeUrl}" onload="setTimeout(() => window.print(), 200)" style="max-width:100%;height:auto;display:block;margin:0 auto" />`
+        : `<iframe src="${safeUrl}" onload="setTimeout(() => window.print(), 400)" style="border:0;width:100%;height:100vh"></iframe>`;
       win.document.write(
-        `<!doctype html><html><head><title>${doc.title}</title><meta charset="utf-8" /><style>html,body{margin:0;padding:0;height:100%}</style></head><body>${body}</body></html>`,
+        `<!doctype html><html><head><title>${safeTitle}</title><meta charset="utf-8" /><style>html,body{margin:0;padding:0;height:100%}</style></head><body>${body}</body></html>`,
       );
       win.document.close();
     } catch {
@@ -221,6 +242,7 @@ function DetailPage() {
           <Button size="sm" onClick={download}>
             <Download className="mr-1.5 h-4 w-4" /> Download
           </Button>
+          {isAdmin && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm">
@@ -242,6 +264,7 @@ function DetailPage() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          )}
         </div>
       </div>
 

@@ -36,7 +36,25 @@ export function formatBytes(bytes: number | null): string {
   return `${(bytes / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
+// ---------------- Roles ----------------
+
+/** True if the current signed-in user has the admin role. */
+export async function isCurrentUserAdmin(): Promise<boolean> {
+  const { data: userData } = await supabase.auth.getUser();
+  const uid = userData.user?.id;
+  if (!uid) return false;
+  const { data, error } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", uid)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (error) return false;
+  return !!data;
+}
+
 // ---------------- Documents ----------------
+
 
 export async function listDocuments(): Promise<DocumentRow[]> {
   const { data, error } = await supabase
