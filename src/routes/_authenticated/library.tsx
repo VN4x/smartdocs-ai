@@ -43,10 +43,12 @@ function normalize(value: string): string {
 }
 
 function LibraryPage() {
+  const { folder } = Route.useSearch();
   const { data: docs = [], isLoading, error } = useQuery({
     queryKey: ["documents"],
     queryFn: listDocuments,
   });
+  const { data: folders = [] } = useQuery({ queryKey: ["folders"], queryFn: listFolders });
 
   const [search, setSearch] = useState("");
   const [tuup, setTuup] = useState(ALL);
@@ -59,9 +61,22 @@ function LibraryPage() {
   const materials = useMemo(() => distinctValues(docs, "materjal"), [docs]);
   const suppliers = useMemo(() => distinctValues(docs, "supplier"), [docs]);
 
+  const folderName = useMemo(() => {
+    if (folder === "unfiled") return "Unfiled";
+    if (folder) return folders.find((f) => f.id === folder)?.name ?? "Folder";
+    return null;
+  }, [folder, folders]);
+
+  // Documents scoped to the selected folder (before search/metadata filters).
+  const scoped = useMemo(() => {
+    if (folder === "unfiled") return docs.filter((d) => !d.folder_id);
+    if (folder) return docs.filter((d) => d.folder_id === folder);
+    return docs;
+  }, [docs, folder]);
+
   const filtered = useMemo(() => {
     const q = normalize(search.trim());
-    return docs.filter((d) => {
+    return scoped.filter((d) => {
       if (tuup !== ALL && d.tuup !== tuup) return false;
       if (objekt !== ALL && d.objekt !== objekt) return false;
       if (materjal !== ALL && d.materjal !== materjal) return false;
@@ -84,7 +99,8 @@ function LibraryPage() {
       );
       return haystack.includes(q);
     });
-  }, [docs, search, tuup, objekt, materjal, supplier]);
+  }, [scoped, search, tuup, objekt, materjal, supplier]);
+
 
 
   const hasFilters =
