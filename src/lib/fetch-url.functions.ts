@@ -141,6 +141,10 @@ export const fetchDocumentFromUrl = createServerFn({ method: "POST" })
       throw new Error("Only http(s) links are supported.");
     }
 
+    if (isBlockedHost(original.hostname)) {
+      throw new Error("That address isn't allowed.");
+    }
+
     // Google Drive folder links can't be downloaded from a plain URL.
     if (
       original.hostname.toLowerCase().includes("drive.google.com") &&
@@ -152,6 +156,15 @@ export const fetchDocumentFromUrl = createServerFn({ method: "POST" })
     }
 
     const target = normalizeUrl(data.url);
+
+    // Re-check after normalisation (provider rewrites can change the host).
+    try {
+      if (isBlockedHost(new URL(target).hostname)) {
+        throw new Error("That address isn't allowed.");
+      }
+    } catch (e) {
+      if (e instanceof Error && e.message === "That address isn't allowed.") throw e;
+    }
 
     let res: Response;
     try {
