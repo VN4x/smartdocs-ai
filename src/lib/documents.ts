@@ -3,6 +3,7 @@ import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 export type DocumentRow = Tables<"documents">;
 export type DocumentTypeRow = Tables<"document_types">;
+export type FolderRow = Tables<"folders">;
 
 export const BUCKET = "documents";
 
