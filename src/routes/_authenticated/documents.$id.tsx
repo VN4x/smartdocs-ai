@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getDocument,
   getSignedUrl,
+  getShareUrl,
   deleteDocument,
   updateDocument,
   isPreviewable,
@@ -17,6 +18,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -28,7 +36,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Loader2, Pencil, Trash2, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Loader2,
+  Pencil,
+  Trash2,
+  FileText,
+  Printer,
+  Send,
+  Copy,
+  Check,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/documents/$id")({
   head: () => ({ meta: [{ title: "Document · Document Library" }] }),
@@ -46,6 +65,10 @@ function DetailPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { data: doc, isLoading } = useQuery({
     queryKey: ["documents", id],
@@ -65,6 +88,62 @@ function DetailPage() {
       window.open(url, "_blank");
     } catch {
       toast.error("Couldn't generate download link.");
+    }
+  }
+
+  async function print() {
+    if (!doc) return;
+    setPrinting(true);
+    try {
+      const url = await getSignedUrl(doc.file_path);
+      const isImage = (doc.mime_type ?? "").startsWith("image/");
+      const win = window.open("", "_blank");
+      if (!win) {
+        toast.error("Allow pop-ups to print this document.");
+        return;
+      }
+      const body = isImage
+        ? `<img src="${url}" onload="setTimeout(() => window.print(), 200)" style="max-width:100%;height:auto;display:block;margin:0 auto" />`
+        : `<iframe src="${url}" onload="setTimeout(() => window.print(), 400)" style="border:0;width:100%;height:100vh"></iframe>`;
+      win.document.write(
+        `<!doctype html><html><head><title>${doc.title}</title><meta charset="utf-8" /><style>html,body{margin:0;padding:0;height:100%}</style></head><body>${body}</body></html>`,
+      );
+      win.document.close();
+    } catch {
+      toast.error("Couldn't prepare the document for printing.");
+    } finally {
+      setPrinting(false);
+    }
+  }
+
+  async function share() {
+    if (!doc) return;
+    setSharing(true);
+    setCopied(false);
+    try {
+      const url = await getShareUrl(doc.file_path);
+      setShareUrl(url);
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+      } catch {
+        /* clipboard may be blocked; the dialog still shows the link */
+      }
+    } catch {
+      toast.error("Couldn't create a share link.");
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function copyShareUrl() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast.success("Link copied.");
+    } catch {
+      toast.error("Couldn't copy. Select and copy the link manually.");
     }
   }
 
@@ -117,6 +196,22 @@ function DetailPage() {
           <Button variant="outline" size="sm" onClick={() => setEditing((v) => !v)}>
             <Pencil className="mr-1.5 h-4 w-4" /> {editing ? "Close" : "Edit"}
           </Button>
+          <Button variant="outline" size="sm" onClick={print} disabled={printing}>
+            {printing ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Printer className="mr-1.5 h-4 w-4" />
+            )}
+            Print
+          </Button>
+          <Button variant="outline" size="sm" onClick={share} disabled={sharing}>
+            {sharing ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="mr-1.5 h-4 w-4" />
+            )}
+            Send
+          </Button>
           <Button size="sm" onClick={download}>
             <Download className="mr-1.5 h-4 w-4" /> Download
           </Button>
@@ -143,6 +238,25 @@ function DetailPage() {
           </AlertDialog>
         </div>
       </div>
+
+      <Dialog open={!!shareUrl} onOpenChange={(open) => !open && setShareUrl(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Private share link</DialogTitle>
+            <DialogDescription>
+              Anyone with this link can view the file. It works for 24 hours, then
+              expires automatically. {copied ? "Copied to your clipboard." : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <Input readOnly value={shareUrl ?? ""} onFocus={(e) => e.target.select()} />
+            <Button type="button" variant="outline" size="icon" onClick={copyShareUrl}>
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
       {editing ? (
         <EditForm

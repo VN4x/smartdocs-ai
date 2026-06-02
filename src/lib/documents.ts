@@ -116,6 +116,15 @@ export async function getSignedUrl(path: string, download = false): Promise<stri
   return data.signedUrl;
 }
 
+/** Private, reusable share link to the stored file, valid for 24 hours. */
+export async function getShareUrl(path: string): Promise<string> {
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, 60 * 60 * 24);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
 // ---------------- Document types ----------------
 
 export async function listDocumentTypes(): Promise<DocumentTypeRow[]> {
