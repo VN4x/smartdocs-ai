@@ -436,7 +436,9 @@ function EditForm({
         materjal: form.materjal.trim() || null,
         supplier: form.supplier.trim() || null,
         doc_date: form.doc_date || null,
+        folder_id: folderId === "__none__" ? null : folderId,
         tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+
       });
       toast.success("Saved.");
       onDone();
