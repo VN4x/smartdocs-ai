@@ -494,9 +494,26 @@ function EditForm({
             </div>
           </div>
           <div className="space-y-2">
+            <Label>Folder</Label>
+            <Select value={folderId} onValueChange={setFolderId}>
+              <SelectTrigger>
+                <SelectValue placeholder="No folder" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">No folder (Unfiled)</SelectItem>
+                {folders.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>Tags (comma separated)</Label>
             <Input value={form.tags} onChange={(e) => set("tags", e.target.value)} />
           </div>
+
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
