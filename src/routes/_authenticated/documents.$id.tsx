@@ -80,6 +80,11 @@ function DetailPage() {
     if (doc && isPreviewable(doc.mime_type, doc.original_ext)) {
       getSignedUrl(doc.file_path).then(setPreviewUrl).catch(() => setPreviewUrl(null));
     }
+    if (doc?.thumbnail_path) {
+      getSignedUrl(doc.thumbnail_path).then(setThumbUrl).catch(() => setThumbUrl(null));
+    } else {
+      setThumbUrl(null);
+    }
   }, [doc]);
 
   async function download() {
