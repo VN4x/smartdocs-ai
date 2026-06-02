@@ -118,11 +118,12 @@ function LibraryPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{folderName ?? "Documents"}</h1>
           <p className="text-sm text-muted-foreground">
-            {isLoading ? "Loading…" : `${filtered.length} of ${docs.length} documents`}
+            {isLoading ? "Loading…" : `${filtered.length} of ${scoped.length} documents`}
           </p>
         </div>
+
         <Button asChild>
           <Link to="/upload">
             <Upload className="mr-1.5 h-4 w-4" /> Upload document
