@@ -48,6 +48,7 @@ export type Database = {
           supplier: string | null
           tags: string[]
           tellimuse_kinnitus: string | null
+          thumbnail_path: string | null
           title: string
           tuup: string | null
           updated_at: string
@@ -68,6 +69,7 @@ export type Database = {
           supplier?: string | null
           tags?: string[]
           tellimuse_kinnitus?: string | null
+          thumbnail_path?: string | null
           title: string
           tuup?: string | null
           updated_at?: string
@@ -88,6 +90,7 @@ export type Database = {
           supplier?: string | null
           tags?: string[]
           tellimuse_kinnitus?: string | null
+          thumbnail_path?: string | null
           title?: string
           tuup?: string | null
           updated_at?: string
