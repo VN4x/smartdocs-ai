@@ -91,6 +91,62 @@ function DetailPage() {
     }
   }
 
+  async function print() {
+    if (!doc) return;
+    setPrinting(true);
+    try {
+      const url = await getSignedUrl(doc.file_path);
+      const isImage = (doc.mime_type ?? "").startsWith("image/");
+      const win = window.open("", "_blank");
+      if (!win) {
+        toast.error("Allow pop-ups to print this document.");
+        return;
+      }
+      const body = isImage
+        ? `<img src="${url}" onload="setTimeout(() => window.print(), 200)" style="max-width:100%;height:auto;display:block;margin:0 auto" />`
+        : `<iframe src="${url}" onload="setTimeout(() => window.print(), 400)" style="border:0;width:100%;height:100vh"></iframe>`;
+      win.document.write(
+        `<!doctype html><html><head><title>${doc.title}</title><meta charset="utf-8" /><style>html,body{margin:0;padding:0;height:100%}</style></head><body>${body}</body></html>`,
+      );
+      win.document.close();
+    } catch {
+      toast.error("Couldn't prepare the document for printing.");
+    } finally {
+      setPrinting(false);
+    }
+  }
+
+  async function share() {
+    if (!doc) return;
+    setSharing(true);
+    setCopied(false);
+    try {
+      const url = await getShareUrl(doc.file_path);
+      setShareUrl(url);
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopied(true);
+      } catch {
+        /* clipboard may be blocked; the dialog still shows the link */
+      }
+    } catch {
+      toast.error("Couldn't create a share link.");
+    } finally {
+      setSharing(false);
+    }
+  }
+
+  async function copyShareUrl() {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      toast.success("Link copied.");
+    } catch {
+      toast.error("Couldn't copy. Select and copy the link manually.");
+    }
+  }
+
   async function remove() {
     if (!doc) return;
     setBusy(true);
