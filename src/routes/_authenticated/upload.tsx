@@ -174,6 +174,10 @@ function UploadPage() {
             };
           })();
 
+      const thumbnail_path = image
+        ? (await uploadFile(image, "thumbnails/")).path
+        : null;
+
       if (form.tuup.trim()) await ensureDocumentType(form.tuup);
       const tags = form.tags
         .split(",")
@@ -194,6 +198,7 @@ function UploadPage() {
         file_size: stored.file_size,
         mime_type: stored.mime_type,
         original_ext: stored.original_ext,
+        thumbnail_path,
       });
       await queryClient.invalidateQueries({ queryKey: ["documents"] });
       await queryClient.invalidateQueries({ queryKey: ["document_types"] });
