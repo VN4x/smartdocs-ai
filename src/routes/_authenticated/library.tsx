@@ -22,6 +22,14 @@ export const Route = createFileRoute("/_authenticated/library")({
 
 const ALL = "__all__";
 
+/** Lowercase + strip diacritics so "tuup" matches "Tüüp", "soon" matches "söön", etc. */
+function normalize(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function LibraryPage() {
   const { data: docs = [], isLoading, error } = useQuery({
     queryKey: ["documents"],
