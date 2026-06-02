@@ -56,6 +56,8 @@ function UploadPage() {
     queryKey: ["document_types"],
     queryFn: listDocumentTypes,
   });
+  const { data: folders = [] } = useQuery({ queryKey: ["folders"], queryFn: listFolders });
+
 
   const typeOptions = useMemo(() => typeRows.map((t) => t.name), [typeRows]);
   const objectOptions = useMemo(() => distinctValues(docs, "objekt"), [docs]);
