@@ -280,6 +280,15 @@ function DetailPage() {
               <CardTitle className="text-base">Metadata</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
+              {thumbUrl && (
+                <a href={thumbUrl} target="_blank" rel="noreferrer" className="block">
+                  <img
+                    src={thumbUrl}
+                    alt={`${doc.title} preview`}
+                    className="w-full rounded-md border object-cover"
+                  />
+                </a>
+              )}
               <Meta label="Tüüp (type)" value={doc.tuup} />
               <Meta label="Tellimuse kinnitus" value={doc.tellimuse_kinnitus} />
               <Meta label="Objekt (object)" value={doc.objekt} />
