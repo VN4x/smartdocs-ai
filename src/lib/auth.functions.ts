@@ -47,7 +47,19 @@ export const requestLoginLink = createServerFn({ method: "POST" })
     const pub = createClient(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          // CRITICAL: this OTP is initiated server-side. With the default PKCE
+          // flow the code verifier would be generated here and never reach the
+          // browser, so the magic link's ?code= could never be exchanged and
+          // the user would be bounced back to /auth. Implicit flow returns the
+          // tokens directly in the URL hash, which the browser client consumes
+          // without a verifier.
+          flowType: "implicit",
+        },
+      },
     );
     const { error } = await pub.auth.signInWithOtp({
       email: data.email,
