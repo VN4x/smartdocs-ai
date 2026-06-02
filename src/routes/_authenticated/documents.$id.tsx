@@ -65,6 +65,10 @@ function DetailPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const { data: doc, isLoading } = useQuery({
     queryKey: ["documents", id],
