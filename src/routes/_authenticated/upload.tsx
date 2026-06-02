@@ -20,7 +20,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { UploadCloud, Loader2, FileText, X, Link2, ImagePlus } from "lucide-react";
-import { isImageFile, IMAGE_TYPES } from "@/lib/documents";
 
 /** A file fetched server-side from a URL and already stored in the bucket. */
 type RemoteFile = {
