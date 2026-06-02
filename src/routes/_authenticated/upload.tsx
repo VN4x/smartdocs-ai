@@ -55,8 +55,11 @@ function UploadPage() {
 
   const fetchFromUrl = useServerFn(fetchDocumentFromUrl);
 
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [remote, setRemote] = useState<RemoteFile | null>(null);
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [url, setUrl] = useState("");
   const [fetching, setFetching] = useState(false);
   const [dragOver, setDragOver] = useState(false);
