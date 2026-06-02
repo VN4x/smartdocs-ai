@@ -7,6 +7,7 @@ import {
   getShareUrl,
   deleteDocument,
   updateDocument,
+  listFolders,
   isPreviewable,
   isCurrentUserAdmin,
   formatBytes,
@@ -16,6 +17,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -395,6 +404,8 @@ function EditForm({
   onDone: () => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const [folderId, setFolderId] = useState<string>(doc.folder_id ?? "__none__");
+  const { data: folders = [] } = useQuery({ queryKey: ["folders"], queryFn: listFolders });
   const [form, setForm] = useState({
     title: doc.title,
     description: doc.description ?? "",
@@ -406,6 +417,7 @@ function EditForm({
     doc_date: doc.doc_date ?? "",
     tags: (doc.tags ?? []).join(", "),
   });
+
 
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((s) => ({ ...s, [key]: value }));
@@ -424,7 +436,9 @@ function EditForm({
         materjal: form.materjal.trim() || null,
         supplier: form.supplier.trim() || null,
         doc_date: form.doc_date || null,
+        folder_id: folderId === "__none__" ? null : folderId,
         tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+
       });
       toast.success("Saved.");
       onDone();
@@ -480,9 +494,26 @@ function EditForm({
             </div>
           </div>
           <div className="space-y-2">
+            <Label>Folder</Label>
+            <Select value={folderId} onValueChange={setFolderId}>
+              <SelectTrigger>
+                <SelectValue placeholder="No folder" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none__">No folder (Unfiled)</SelectItem>
+                {folders.map((f) => (
+                  <SelectItem key={f.id} value={f.id}>
+                    {f.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>Tags (comma separated)</Label>
             <Input value={form.tags} onChange={(e) => set("tags", e.target.value)} />
           </div>
+
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea

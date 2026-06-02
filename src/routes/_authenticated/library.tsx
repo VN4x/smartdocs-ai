@@ -1,7 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { listDocuments, distinctValues, extOf, type DocumentRow } from "@/lib/documents";
+import {
+  listDocuments,
+  listFolders,
+  distinctValues,
+  extOf,
+  type DocumentRow,
+} from "@/lib/documents";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,10 +21,16 @@ import {
 import { Card } from "@/components/ui/card";
 import { Search, FileText, Upload, X, Loader2 } from "lucide-react";
 
+type LibrarySearch = { folder?: string };
+
 export const Route = createFileRoute("/_authenticated/library")({
   head: () => ({ meta: [{ title: "Library · Document Library" }] }),
+  validateSearch: (search: Record<string, unknown>): LibrarySearch => ({
+    folder: typeof search.folder === "string" ? search.folder : undefined,
+  }),
   component: LibraryPage,
 });
+
 
 const ALL = "__all__";
 
@@ -31,10 +43,12 @@ function normalize(value: string): string {
 }
 
 function LibraryPage() {
+  const { folder } = Route.useSearch();
   const { data: docs = [], isLoading, error } = useQuery({
     queryKey: ["documents"],
     queryFn: listDocuments,
   });
+  const { data: folders = [] } = useQuery({ queryKey: ["folders"], queryFn: listFolders });
 
   const [search, setSearch] = useState("");
   const [tuup, setTuup] = useState(ALL);
@@ -47,9 +61,22 @@ function LibraryPage() {
   const materials = useMemo(() => distinctValues(docs, "materjal"), [docs]);
   const suppliers = useMemo(() => distinctValues(docs, "supplier"), [docs]);
 
+  const folderName = useMemo(() => {
+    if (folder === "unfiled") return "Unfiled";
+    if (folder) return folders.find((f) => f.id === folder)?.name ?? "Folder";
+    return null;
+  }, [folder, folders]);
+
+  // Documents scoped to the selected folder (before search/metadata filters).
+  const scoped = useMemo(() => {
+    if (folder === "unfiled") return docs.filter((d) => !d.folder_id);
+    if (folder) return docs.filter((d) => d.folder_id === folder);
+    return docs;
+  }, [docs, folder]);
+
   const filtered = useMemo(() => {
     const q = normalize(search.trim());
-    return docs.filter((d) => {
+    return scoped.filter((d) => {
       if (tuup !== ALL && d.tuup !== tuup) return false;
       if (objekt !== ALL && d.objekt !== objekt) return false;
       if (materjal !== ALL && d.materjal !== materjal) return false;
@@ -72,7 +99,8 @@ function LibraryPage() {
       );
       return haystack.includes(q);
     });
-  }, [docs, search, tuup, objekt, materjal, supplier]);
+  }, [scoped, search, tuup, objekt, materjal, supplier]);
+
 
 
   const hasFilters =
@@ -90,11 +118,12 @@ function LibraryPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{folderName ?? "Documents"}</h1>
           <p className="text-sm text-muted-foreground">
-            {isLoading ? "Loading…" : `${filtered.length} of ${docs.length} documents`}
+            {isLoading ? "Loading…" : `${filtered.length} of ${scoped.length} documents`}
           </p>
         </div>
+
         <Button asChild>
           <Link to="/upload">
             <Upload className="mr-1.5 h-4 w-4" /> Upload document

@@ -9,6 +9,7 @@ import {
   extOf,
   listDocuments,
   listDocumentTypes,
+  listFolders,
   distinctValues,
   formatBytes,
   isImageFile,
@@ -19,9 +20,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { UploadCloud, Loader2, FileText, X, Link2, ImagePlus } from "lucide-react";
+
 
 /** A file fetched server-side from a URL and already stored in the bucket. */
 type RemoteFile = {
@@ -47,6 +56,8 @@ function UploadPage() {
     queryKey: ["document_types"],
     queryFn: listDocumentTypes,
   });
+  const { data: folders = [] } = useQuery({ queryKey: ["folders"], queryFn: listFolders });
+
 
   const typeOptions = useMemo(() => typeRows.map((t) => t.name), [typeRows]);
   const objectOptions = useMemo(() => distinctValues(docs, "objekt"), [docs]);
@@ -64,7 +75,9 @@ function UploadPage() {
   const [fetching, setFetching] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [folderId, setFolderId] = useState<string>("__none__");
   const [form, setForm] = useState({
+
     title: "",
     description: "",
     tuup: "",
@@ -192,7 +205,9 @@ function UploadPage() {
         materjal: form.materjal.trim() || null,
         supplier: form.supplier.trim() || null,
         doc_date: form.doc_date || null,
+        folder_id: folderId === "__none__" ? null : folderId,
         tags,
+
         file_path: stored.path,
         file_name: stored.file_name,
         file_size: stored.file_size,
@@ -430,6 +445,22 @@ function UploadPage() {
               <Field label="Tags (comma separated)">
                 <Input value={form.tags} onChange={(e) => set("tags", e.target.value)} />
               </Field>
+              <Field label="Folder">
+                <Select value={folderId} onValueChange={setFolderId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="No folder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No folder (Unfiled)</SelectItem>
+                    {folders.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
             </div>
             <Field label="Description">
               <Textarea

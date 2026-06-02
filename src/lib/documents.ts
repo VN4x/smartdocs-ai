@@ -3,6 +3,7 @@ import type { Tables, TablesInsert } from "@/integrations/supabase/types";
 
 export type DocumentRow = Tables<"documents">;
 export type DocumentTypeRow = Tables<"document_types">;
+export type FolderRow = Tables<"folders">;
 
 export const BUCKET = "documents";
 
@@ -184,3 +185,58 @@ export function distinctValues(docs: DocumentRow[], key: keyof DocumentRow): str
   }
   return Array.from(set).sort((a, b) => a.localeCompare(b));
 }
+
+// ---------------- Folders ----------------
+
+export async function listFolders(): Promise<FolderRow[]> {
+  const { data, error } = await supabase
+    .from("folders")
+    .select("*")
+    .order("name");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createFolder(name: string, parentId: string | null = null): Promise<FolderRow> {
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error("Folder name is required.");
+  const { data: userData } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("folders")
+    .insert({ name: trimmed, parent_id: parentId, created_by: userData.user?.id ?? null })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function renameFolder(id: string, name: string): Promise<FolderRow> {
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error("Folder name is required.");
+  const { data, error } = await supabase
+    .from("folders")
+    .update({ name: trimmed })
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+/** Admin-only at the database level. Documents in the folder fall back to "Unfiled". */
+export async function deleteFolder(id: string): Promise<void> {
+  const { error } = await supabase.from("folders").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function moveDocumentToFolder(
+  documentId: string,
+  folderId: string | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from("documents")
+    .update({ folder_id: folderId })
+    .eq("id", documentId);
+  if (error) throw error;
+}
+

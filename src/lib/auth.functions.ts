@@ -38,6 +38,10 @@ export const requestLoginLink = createServerFn({ method: "POST" })
       throw new Error(created.error.message);
     }
 
+    // Auto-grant the admin role to allowlisted admin addresses (no-op for
+    // everyone else). Runs server-side with the service role.
+    await supabaseAdmin.rpc("ensure_admin_for_email", { _email: data.email });
+
     // Email the magic link through the standard auth pipeline.
     const { createClient } = await import("@supabase/supabase-js");
     const pub = createClient(

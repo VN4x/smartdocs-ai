@@ -170,6 +170,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      ensure_admin_for_email: { Args: { _email: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
