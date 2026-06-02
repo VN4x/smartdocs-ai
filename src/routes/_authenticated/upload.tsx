@@ -113,7 +113,6 @@ function UploadPage() {
     }
   }
 
-
   function set<K extends keyof typeof form>(key: K, value: string) {
     setForm((s) => ({ ...s, [key]: value }));
   }
