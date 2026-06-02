@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   createDocument,
   ensureDocumentType,
@@ -11,13 +12,23 @@ import {
   distinctValues,
   formatBytes,
 } from "@/lib/documents";
+import { fetchDocumentFromUrl } from "@/lib/fetch-url.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { UploadCloud, Loader2, FileText, X } from "lucide-react";
+import { UploadCloud, Loader2, FileText, X, Link2 } from "lucide-react";
+
+/** A file fetched server-side from a URL and already stored in the bucket. */
+type RemoteFile = {
+  path: string;
+  file_name: string;
+  file_size: number;
+  mime_type: string | null;
+  original_ext: string | null;
+};
 
 export const Route = createFileRoute("/_authenticated/upload")({
   head: () => ({ meta: [{ title: "Upload · Document Library" }] }),
