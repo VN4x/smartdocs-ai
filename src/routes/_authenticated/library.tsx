@@ -1,7 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { listDocuments, distinctValues, extOf, type DocumentRow } from "@/lib/documents";
+import {
+  listDocuments,
+  listFolders,
+  distinctValues,
+  extOf,
+  type DocumentRow,
+} from "@/lib/documents";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,10 +21,16 @@ import {
 import { Card } from "@/components/ui/card";
 import { Search, FileText, Upload, X, Loader2 } from "lucide-react";
 
+type LibrarySearch = { folder?: string };
+
 export const Route = createFileRoute("/_authenticated/library")({
   head: () => ({ meta: [{ title: "Library · Document Library" }] }),
+  validateSearch: (search: Record<string, unknown>): LibrarySearch => ({
+    folder: typeof search.folder === "string" ? search.folder : undefined,
+  }),
   component: LibraryPage,
 });
+
 
 const ALL = "__all__";
 
