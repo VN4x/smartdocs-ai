@@ -87,6 +87,11 @@ function DetailPage() {
     queryFn: () => getDocument(id),
   });
 
+  const { data: isAdmin = false } = useQuery({
+    queryKey: ["is-admin"],
+    queryFn: isCurrentUserAdmin,
+  });
+
   useEffect(() => {
     if (doc && isPreviewable(doc.mime_type, doc.original_ext)) {
       getSignedUrl(doc.file_path).then(setPreviewUrl).catch(() => setPreviewUrl(null));
