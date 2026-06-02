@@ -236,6 +236,7 @@ function DetailPage() {
           <Button size="sm" onClick={download}>
             <Download className="mr-1.5 h-4 w-4" /> Download
           </Button>
+          {isAdmin && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm">
@@ -257,6 +258,7 @@ function DetailPage() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          )}
         </div>
       </div>
 
