@@ -239,6 +239,25 @@ function DetailPage() {
         </div>
       </div>
 
+      <Dialog open={!!shareUrl} onOpenChange={(open) => !open && setShareUrl(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Private share link</DialogTitle>
+            <DialogDescription>
+              Anyone with this link can view the file. It works for 24 hours, then
+              expires automatically. {copied ? "Copied to your clipboard." : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2">
+            <Input readOnly value={shareUrl ?? ""} onFocus={(e) => e.target.select()} />
+            <Button type="button" variant="outline" size="icon" onClick={copyShareUrl}>
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
       {editing ? (
         <EditForm
           doc={doc}
