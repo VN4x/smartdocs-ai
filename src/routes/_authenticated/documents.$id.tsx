@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getDocument,
   getSignedUrl,
+  getShareUrl,
   deleteDocument,
   updateDocument,
   isPreviewable,
@@ -17,6 +18,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -28,7 +36,18 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Download, Loader2, Pencil, Trash2, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Loader2,
+  Pencil,
+  Trash2,
+  FileText,
+  Printer,
+  Send,
+  Copy,
+  Check,
+} from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/documents/$id")({
   head: () => ({ meta: [{ title: "Document · Document Library" }] }),
