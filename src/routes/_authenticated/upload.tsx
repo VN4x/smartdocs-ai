@@ -98,6 +98,32 @@ function UploadPage() {
     setRemote(null);
   }
 
+  function pickImage(f: File | null) {
+    if (!f) return;
+    if (!isImageFile(f)) {
+      toast.error("Please choose a PNG, JPG, WEBP or GIF image.");
+      return;
+    }
+    if (f.size > 10 * 1024 * 1024) {
+      toast.error("Preview image must be under 10 MB.");
+      return;
+    }
+    setImage(f);
+    setImagePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(f);
+    });
+  }
+
+  function clearImage() {
+    setImage(null);
+    setImagePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  }
+
   async function handleFetchUrl() {
     const trimmed = url.trim();
     if (!trimmed) {
