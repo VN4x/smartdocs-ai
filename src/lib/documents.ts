@@ -108,8 +108,9 @@ export async function updateDocument(
 }
 
 export async function deleteDocument(doc: DocumentRow): Promise<void> {
-  if (doc.file_path) {
-    await supabase.storage.from(BUCKET).remove([doc.file_path]);
+  const paths = [doc.file_path, doc.thumbnail_path].filter(Boolean) as string[];
+  if (paths.length) {
+    await supabase.storage.from(BUCKET).remove(paths);
   }
   const { error } = await supabase.from("documents").delete().eq("id", doc.id);
   if (error) throw error;
