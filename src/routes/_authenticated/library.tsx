@@ -48,30 +48,32 @@ function LibraryPage() {
   const suppliers = useMemo(() => distinctValues(docs, "supplier"), [docs]);
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
+    const q = normalize(search.trim());
     return docs.filter((d) => {
       if (tuup !== ALL && d.tuup !== tuup) return false;
       if (objekt !== ALL && d.objekt !== objekt) return false;
       if (materjal !== ALL && d.materjal !== materjal) return false;
       if (supplier !== ALL && d.supplier !== supplier) return false;
       if (!q) return true;
-      const haystack = [
-        d.title,
-        d.description,
-        d.tuup,
-        d.tellimuse_kinnitus,
-        d.objekt,
-        d.materjal,
-        d.supplier,
-        d.file_name,
-        ...(d.tags ?? []),
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
+      const haystack = normalize(
+        [
+          d.title,
+          d.description,
+          d.tuup,
+          d.tellimuse_kinnitus,
+          d.objekt,
+          d.materjal,
+          d.supplier,
+          d.file_name,
+          ...(d.tags ?? []),
+        ]
+          .filter(Boolean)
+          .join(" "),
+      );
       return haystack.includes(q);
     });
   }, [docs, search, tuup, objekt, materjal, supplier]);
+
 
   const hasFilters =
     tuup !== ALL || objekt !== ALL || materjal !== ALL || supplier !== ALL || search.trim();
