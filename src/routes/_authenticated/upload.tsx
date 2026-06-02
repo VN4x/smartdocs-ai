@@ -307,9 +307,54 @@ function UploadPage() {
               className="hidden"
               onChange={(e) => pick(e.target.files?.[0] ?? null)}
             />
+
+            <div className="space-y-2 border-t pt-4">
+              <Label className="text-sm">Preview image (optional)</Label>
+              <p className="text-xs text-muted-foreground">
+                Attach a small screenshot or photo (PNG, JPG, WEBP, GIF). Shown as a
+                thumbnail. Max 10 MB.
+              </p>
+              {image ? (
+                <div className="flex items-center justify-between rounded-md border bg-muted/40 p-3">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    {imagePreview && (
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="h-12 w-12 shrink-0 rounded object-cover"
+                      />
+                    )}
+                    <div className="overflow-hidden">
+                      <p className="truncate text-sm font-medium">{image.name}</p>
+                      <p className="text-xs text-muted-foreground">{formatBytes(image.size)}</p>
+                    </div>
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" onClick={clearImage}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  <ImagePlus className="mr-1.5 h-4 w-4" /> Add image
+                </Button>
+              )}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept={IMAGE_TYPES.join(",")}
+                className="hidden"
+                onChange={(e) => pickImage(e.target.files?.[0] ?? null)}
+              />
+            </div>
           </CardContent>
 
         </Card>
+
 
         <Card>
           <CardHeader>
