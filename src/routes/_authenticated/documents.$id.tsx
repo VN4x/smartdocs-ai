@@ -1,0 +1,352 @@
+import { createFileRoute, Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  getDocument,
+  getSignedUrl,
+  deleteDocument,
+  updateDocument,
+  isPreviewable,
+  formatBytes,
+  extOf,
+} from "@/lib/documents";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { ArrowLeft, Download, Loader2, Pencil, Trash2, FileText } from "lucide-react";
+
+export const Route = createFileRoute("/_authenticated/documents/$id")({
+  head: () => ({ meta: [{ title: "Document · Document Library" }] }),
+  component: DetailPage,
+  notFoundComponent: () => <p className="text-sm text-muted-foreground">Document not found.</p>,
+  errorComponent: () => (
+    <p className="text-sm text-destructive">Couldn't load this document.</p>
+  ),
+});
+
+function DetailPage() {
+  const { id } = useParams({ from: "/_authenticated/documents/$id" });
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const { data: doc, isLoading } = useQuery({
+    queryKey: ["documents", id],
+    queryFn: () => getDocument(id),
+  });
+
+  useEffect(() => {
+    if (doc && isPreviewable(doc.mime_type, doc.original_ext)) {
+      getSignedUrl(doc.file_path).then(setPreviewUrl).catch(() => setPreviewUrl(null));
+    }
+  }, [doc]);
+
+  async function download() {
+    if (!doc) return;
+    try {
+      const url = await getSignedUrl(doc.file_path, true);
+      window.open(url, "_blank");
+    } catch {
+      toast.error("Couldn't generate download link.");
+    }
+  }
+
+  async function remove() {
+    if (!doc) return;
+    setBusy(true);
+    try {
+      await deleteDocument(doc);
+      await queryClient.invalidateQueries({ queryKey: ["documents"] });
+      toast.success("Document deleted.");
+      navigate({ to: "/library" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center p-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  if (!doc) return <p className="text-sm text-muted-foreground">Document not found.</p>;
+
+  const ext = doc.original_ext || extOf(doc.file_name);
+
+  return (
+    <div className="space-y-5">
+      <Button variant="ghost" size="sm" asChild>
+        <Link to="/library">
+          <ArrowLeft className="mr-1.5 h-4 w-4" /> Back to library
+        </Link>
+      </Button>
+
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <FileText className="h-7 w-7 text-primary" />
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">{doc.title}</h1>
+            <p className="text-sm text-muted-foreground">
+              {doc.file_name} · {formatBytes(doc.file_size)}
+              {ext ? <span className="uppercase"> · {ext}</span> : null}
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setEditing((v) => !v)}>
+            <Pencil className="mr-1.5 h-4 w-4" /> {editing ? "Close" : "Edit"}
+          </Button>
+          <Button size="sm" onClick={download}>
+            <Download className="mr-1.5 h-4 w-4" /> Download
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                <Trash2 className="mr-1.5 h-4 w-4" /> Delete
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this document?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This permanently removes the file and its metadata. This can't be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={remove} disabled={busy}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+
+      {editing ? (
+        <EditForm
+          doc={doc}
+          onDone={async () => {
+            await queryClient.invalidateQueries({ queryKey: ["documents"] });
+            await queryClient.invalidateQueries({ queryKey: ["documents", id] });
+            setEditing(false);
+          }}
+        />
+      ) : (
+        <div className="grid gap-5 lg:grid-cols-3">
+          <Card className="lg:col-span-1">
+            <CardHeader>
+              <CardTitle className="text-base">Metadata</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm">
+              <Meta label="Tüüp (type)" value={doc.tuup} />
+              <Meta label="Tellimuse kinnitus" value={doc.tellimuse_kinnitus} />
+              <Meta label="Objekt (object)" value={doc.objekt} />
+              <Meta label="Materjal (material)" value={doc.materjal} />
+              <Meta label="Supplier" value={doc.supplier} />
+              <Meta label="Date" value={doc.doc_date} />
+              {doc.tags?.length ? (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Tags</p>
+                  <div className="mt-1 flex flex-wrap gap-1.5">
+                    {doc.tags.map((t) => (
+                      <Badge key={t} variant="secondary">
+                        {t}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {doc.description ? (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground">Description</p>
+                  <p className="mt-1 whitespace-pre-wrap">{doc.description}</p>
+                </div>
+              ) : null}
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-base">Preview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isPreviewable(doc.mime_type, doc.original_ext) ? (
+                previewUrl ? (
+                  doc.mime_type?.startsWith("image/") ? (
+                    <img
+                      src={previewUrl}
+                      alt={doc.title}
+                      className="max-h-[600px] w-full rounded-md object-contain"
+                    />
+                  ) : (
+                    <iframe
+                      src={previewUrl}
+                      title={doc.title}
+                      className="h-[600px] w-full rounded-md border"
+                    />
+                  )
+                ) : (
+                  <div className="flex justify-center p-12">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                )
+              ) : (
+                <div className="flex flex-col items-center gap-3 p-12 text-center text-sm text-muted-foreground">
+                  <FileText className="h-10 w-10" />
+                  <p>No in-browser preview for this file type. Use Download to open it.</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Meta({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div>
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <p>{value || "—"}</p>
+    </div>
+  );
+}
+
+function EditForm({
+  doc,
+  onDone,
+}: {
+  doc: NonNullable<Awaited<ReturnType<typeof getDocument>>>;
+  onDone: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    title: doc.title,
+    description: doc.description ?? "",
+    tuup: doc.tuup ?? "",
+    tellimuse_kinnitus: doc.tellimuse_kinnitus ?? "",
+    objekt: doc.objekt ?? "",
+    materjal: doc.materjal ?? "",
+    supplier: doc.supplier ?? "",
+    doc_date: doc.doc_date ?? "",
+    tags: (doc.tags ?? []).join(", "),
+  });
+
+  function set<K extends keyof typeof form>(key: K, value: string) {
+    setForm((s) => ({ ...s, [key]: value }));
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await updateDocument(doc.id, {
+        title: form.title.trim(),
+        description: form.description.trim() || null,
+        tuup: form.tuup.trim() || null,
+        tellimuse_kinnitus: form.tellimuse_kinnitus.trim() || null,
+        objekt: form.objekt.trim() || null,
+        materjal: form.materjal.trim() || null,
+        supplier: form.supplier.trim() || null,
+        doc_date: form.doc_date || null,
+        tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+      });
+      toast.success("Saved.");
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Edit metadata</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={save} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Title</Label>
+            <Input value={form.title} onChange={(e) => set("title", e.target.value)} required />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Tüüp (type)</Label>
+              <Input value={form.tuup} onChange={(e) => set("tuup", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Tellimuse kinnitus</Label>
+              <Input
+                value={form.tellimuse_kinnitus}
+                onChange={(e) => set("tellimuse_kinnitus", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Objekt (object)</Label>
+              <Input value={form.objekt} onChange={(e) => set("objekt", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Materjal (material)</Label>
+              <Input value={form.materjal} onChange={(e) => set("materjal", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Supplier</Label>
+              <Input value={form.supplier} onChange={(e) => set("supplier", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <Input
+                type="date"
+                value={form.doc_date}
+                onChange={(e) => set("doc_date", e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Tags (comma separated)</Label>
+            <Input value={form.tags} onChange={(e) => set("tags", e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Textarea
+              value={form.description}
+              onChange={(e) => set("description", e.target.value)}
+              rows={3}
+            />
+          </div>
+          <div className="flex justify-end">
+            <Button type="submit" disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save changes
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}

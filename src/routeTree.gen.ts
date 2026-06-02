@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedUploadRouteImport } from './routes/_authenticated/upload'
 import { Route as AuthenticatedLibraryRouteImport } from './routes/_authenticated/library'
+import { Route as AuthenticatedDocumentsIdRouteImport } from './routes/_authenticated/documents.$id'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -39,18 +40,26 @@ const AuthenticatedLibraryRoute = AuthenticatedLibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDocumentsIdRoute =
+  AuthenticatedDocumentsIdRouteImport.update({
+    id: '/documents/$id',
+    path: '/documents/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/library': typeof AuthenticatedLibraryRoute
   '/upload': typeof AuthenticatedUploadRoute
+  '/documents/$id': typeof AuthenticatedDocumentsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/library': typeof AuthenticatedLibraryRoute
   '/upload': typeof AuthenticatedUploadRoute
+  '/documents/$id': typeof AuthenticatedDocumentsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +68,13 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/library': typeof AuthenticatedLibraryRoute
   '/_authenticated/upload': typeof AuthenticatedUploadRoute
+  '/_authenticated/documents/$id': typeof AuthenticatedDocumentsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/library' | '/upload'
+  fullPaths: '/' | '/auth' | '/library' | '/upload' | '/documents/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/library' | '/upload'
+  to: '/' | '/auth' | '/library' | '/upload' | '/documents/$id'
   id:
     | '__root__'
     | '/'
@@ -72,6 +82,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/library'
     | '/_authenticated/upload'
+    | '/_authenticated/documents/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,17 +128,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLibraryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/documents/$id': {
+      id: '/_authenticated/documents/$id'
+      path: '/documents/$id'
+      fullPath: '/documents/$id'
+      preLoaderRoute: typeof AuthenticatedDocumentsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedLibraryRoute: typeof AuthenticatedLibraryRoute
   AuthenticatedUploadRoute: typeof AuthenticatedUploadRoute
+  AuthenticatedDocumentsIdRoute: typeof AuthenticatedDocumentsIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedLibraryRoute: AuthenticatedLibraryRoute,
   AuthenticatedUploadRoute: AuthenticatedUploadRoute,
+  AuthenticatedDocumentsIdRoute: AuthenticatedDocumentsIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
