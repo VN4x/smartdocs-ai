@@ -58,6 +58,17 @@ export const Route = createFileRoute("/_authenticated/documents/$id")({
   ),
 });
 
+/** Escape a string for safe interpolation into raw HTML. */
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+
 function DetailPage() {
   const { id } = useParams({ from: "/_authenticated/documents/$id" });
   const navigate = useNavigate();
