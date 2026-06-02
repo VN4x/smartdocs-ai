@@ -11,6 +11,8 @@ import {
   listDocumentTypes,
   distinctValues,
   formatBytes,
+  isImageFile,
+  IMAGE_TYPES,
 } from "@/lib/documents";
 import { fetchDocumentFromUrl } from "@/lib/fetch-url.functions";
 import { Button } from "@/components/ui/button";
