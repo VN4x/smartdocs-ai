@@ -14,7 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      document_types: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          doc_date: string | null
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          materjal: string | null
+          mime_type: string | null
+          objekt: string | null
+          original_ext: string | null
+          supplier: string | null
+          tags: string[]
+          tellimuse_kinnitus: string | null
+          title: string
+          tuup: string | null
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          doc_date?: string | null
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          materjal?: string | null
+          mime_type?: string | null
+          objekt?: string | null
+          original_ext?: string | null
+          supplier?: string | null
+          tags?: string[]
+          tellimuse_kinnitus?: string | null
+          title: string
+          tuup?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          doc_date?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          materjal?: string | null
+          mime_type?: string | null
+          objekt?: string | null
+          original_ext?: string | null
+          supplier?: string | null
+          tags?: string[]
+          tellimuse_kinnitus?: string | null
+          title?: string
+          tuup?: string | null
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
