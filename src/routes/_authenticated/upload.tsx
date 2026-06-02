@@ -186,44 +186,85 @@ function UploadPage() {
           <CardHeader>
             <CardTitle className="text-base">File</CardTitle>
           </CardHeader>
-          <CardContent>
-            {file ? (
+          <CardContent className="space-y-4">
+            {selectedName ? (
               <div className="flex items-center justify-between rounded-md border bg-muted/40 p-3">
                 <div className="flex items-center gap-2 overflow-hidden">
                   <FileText className="h-5 w-5 shrink-0 text-primary" />
                   <div className="overflow-hidden">
-                    <p className="truncate text-sm font-medium">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
+                    <p className="truncate text-sm font-medium">{selectedName}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatBytes(selectedSize)}
+                      {remote ? " · fetched from link" : ""}
+                    </p>
                   </div>
                 </div>
-                <Button type="button" variant="ghost" size="icon" onClick={() => setFile(null)}>
+                <Button type="button" variant="ghost" size="icon" onClick={clearSelection}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDragOver(true);
-                }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDragOver(false);
-                  pick(e.dataTransfer.files?.[0] ?? null);
-                }}
-                className={`flex w-full flex-col items-center gap-2 rounded-md border-2 border-dashed p-8 text-center transition-colors ${
-                  dragOver ? "border-primary bg-accent/40" : "border-input"
-                }`}
-              >
-                <UploadCloud className="h-8 w-8 text-muted-foreground" />
-                <span className="text-sm font-medium">Drag & drop or click to choose a file</span>
-                <span className="text-xs text-muted-foreground">
-                  PDF, DWG, DOC, XLS, TXT, XML, OSD — any type
-                </span>
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setDragOver(true);
+                  }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOver(false);
+                    pick(e.dataTransfer.files?.[0] ?? null);
+                  }}
+                  className={`flex w-full flex-col items-center gap-2 rounded-md border-2 border-dashed p-8 text-center transition-colors ${
+                    dragOver ? "border-primary bg-accent/40" : "border-input"
+                  }`}
+                >
+                  <UploadCloud className="h-8 w-8 text-muted-foreground" />
+                  <span className="text-sm font-medium">
+                    Drag & drop or click to choose a file
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    PDF, DWG, DOC, XLS, TXT, XML, OSD — any type
+                  </span>
+                </button>
+
+                <div className="flex items-center gap-3">
+                  <span className="h-px flex-1 bg-border" />
+                  <span className="text-xs text-muted-foreground">or upload via URL</span>
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Link2 className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        type="url"
+                        value={url}
+                        onChange={(e) => setUrl(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            void handleFetchUrl();
+                          }
+                        }}
+                        placeholder="Paste a Google Drive, Dropbox, or direct file link…"
+                        className="pl-8"
+                      />
+                    </div>
+                    <Button type="button" variant="secondary" onClick={handleFetchUrl} disabled={fetching}>
+                      {fetching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Fetch"}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Single file only. The file must be shared publicly (anyone with the link).
+                    Max 100 MB.
+                  </p>
+                </div>
+              </>
             )}
             <input
               ref={inputRef}
@@ -232,6 +273,7 @@ function UploadPage() {
               onChange={(e) => pick(e.target.files?.[0] ?? null)}
             />
           </CardContent>
+
         </Card>
 
         <Card>
