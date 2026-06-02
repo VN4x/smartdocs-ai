@@ -58,9 +58,9 @@ export async function getDocument(id: string): Promise<DocumentRow | null> {
   return data;
 }
 
-export async function uploadFile(file: File): Promise<{ path: string }> {
+export async function uploadFile(file: File, prefix = ""): Promise<{ path: string }> {
   const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-  const path = `${crypto.randomUUID()}/${safeName}`;
+  const path = `${prefix}${crypto.randomUUID()}/${safeName}`;
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
     cacheControl: "3600",
     upsert: false,
@@ -68,6 +68,13 @@ export async function uploadFile(file: File): Promise<{ path: string }> {
   });
   if (error) throw error;
   return { path };
+}
+
+/** Accepted preview-image types for the optional screenshot/thumbnail. */
+export const IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+
+export function isImageFile(file: File): boolean {
+  return file.type.startsWith("image/");
 }
 
 export type DocumentMetadata = Omit<
@@ -101,8 +108,9 @@ export async function updateDocument(
 }
 
 export async function deleteDocument(doc: DocumentRow): Promise<void> {
-  if (doc.file_path) {
-    await supabase.storage.from(BUCKET).remove([doc.file_path]);
+  const paths = [doc.file_path, doc.thumbnail_path].filter(Boolean) as string[];
+  if (paths.length) {
+    await supabase.storage.from(BUCKET).remove(paths);
   }
   const { error } = await supabase.from("documents").delete().eq("id", doc.id);
   if (error) throw error;

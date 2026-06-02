@@ -11,6 +11,8 @@ import {
   listDocumentTypes,
   distinctValues,
   formatBytes,
+  isImageFile,
+  IMAGE_TYPES,
 } from "@/lib/documents";
 import { fetchDocumentFromUrl } from "@/lib/fetch-url.functions";
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { UploadCloud, Loader2, FileText, X, Link2 } from "lucide-react";
+import { UploadCloud, Loader2, FileText, X, Link2, ImagePlus } from "lucide-react";
 
 /** A file fetched server-side from a URL and already stored in the bucket. */
 type RemoteFile = {
@@ -53,8 +55,11 @@ function UploadPage() {
 
   const fetchFromUrl = useServerFn(fetchDocumentFromUrl);
 
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [remote, setRemote] = useState<RemoteFile | null>(null);
+  const [image, setImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [url, setUrl] = useState("");
   const [fetching, setFetching] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -91,6 +96,32 @@ function UploadPage() {
   function clearSelection() {
     setFile(null);
     setRemote(null);
+  }
+
+  function pickImage(f: File | null) {
+    if (!f) return;
+    if (!isImageFile(f)) {
+      toast.error("Please choose a PNG, JPG, WEBP or GIF image.");
+      return;
+    }
+    if (f.size > 10 * 1024 * 1024) {
+      toast.error("Preview image must be under 10 MB.");
+      return;
+    }
+    setImage(f);
+    setImagePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(f);
+    });
+  }
+
+  function clearImage() {
+    setImage(null);
+    setImagePreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    if (imageInputRef.current) imageInputRef.current.value = "";
   }
 
   async function handleFetchUrl() {
@@ -143,6 +174,10 @@ function UploadPage() {
             };
           })();
 
+      const thumbnail_path = image
+        ? (await uploadFile(image, "thumbnails/")).path
+        : null;
+
       if (form.tuup.trim()) await ensureDocumentType(form.tuup);
       const tags = form.tags
         .split(",")
@@ -163,6 +198,7 @@ function UploadPage() {
         file_size: stored.file_size,
         mime_type: stored.mime_type,
         original_ext: stored.original_ext,
+        thumbnail_path,
       });
       await queryClient.invalidateQueries({ queryKey: ["documents"] });
       await queryClient.invalidateQueries({ queryKey: ["document_types"] });
@@ -271,9 +307,54 @@ function UploadPage() {
               className="hidden"
               onChange={(e) => pick(e.target.files?.[0] ?? null)}
             />
+
+            <div className="space-y-2 border-t pt-4">
+              <Label className="text-sm">Preview image (optional)</Label>
+              <p className="text-xs text-muted-foreground">
+                Attach a small screenshot or photo (PNG, JPG, WEBP, GIF). Shown as a
+                thumbnail. Max 10 MB.
+              </p>
+              {image ? (
+                <div className="flex items-center justify-between rounded-md border bg-muted/40 p-3">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    {imagePreview && (
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="h-12 w-12 shrink-0 rounded object-cover"
+                      />
+                    )}
+                    <div className="overflow-hidden">
+                      <p className="truncate text-sm font-medium">{image.name}</p>
+                      <p className="text-xs text-muted-foreground">{formatBytes(image.size)}</p>
+                    </div>
+                  </div>
+                  <Button type="button" variant="ghost" size="icon" onClick={clearImage}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  <ImagePlus className="mr-1.5 h-4 w-4" /> Add image
+                </Button>
+              )}
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept={IMAGE_TYPES.join(",")}
+                className="hidden"
+                onChange={(e) => pickImage(e.target.files?.[0] ?? null)}
+              />
+            </div>
           </CardContent>
 
         </Card>
+
 
         <Card>
           <CardHeader>

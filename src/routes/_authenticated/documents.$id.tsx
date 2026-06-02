@@ -63,6 +63,7 @@ function DetailPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
@@ -78,6 +79,11 @@ function DetailPage() {
   useEffect(() => {
     if (doc && isPreviewable(doc.mime_type, doc.original_ext)) {
       getSignedUrl(doc.file_path).then(setPreviewUrl).catch(() => setPreviewUrl(null));
+    }
+    if (doc?.thumbnail_path) {
+      getSignedUrl(doc.thumbnail_path).then(setThumbUrl).catch(() => setThumbUrl(null));
+    } else {
+      setThumbUrl(null);
     }
   }, [doc]);
 
@@ -274,6 +280,15 @@ function DetailPage() {
               <CardTitle className="text-base">Metadata</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
+              {thumbUrl && (
+                <a href={thumbUrl} target="_blank" rel="noreferrer" className="block">
+                  <img
+                    src={thumbUrl}
+                    alt={`${doc.title} preview`}
+                    className="w-full rounded-md border object-cover"
+                  />
+                </a>
+              )}
               <Meta label="Tüüp (type)" value={doc.tuup} />
               <Meta label="Tellimuse kinnitus" value={doc.tellimuse_kinnitus} />
               <Meta label="Objekt (object)" value={doc.objekt} />
