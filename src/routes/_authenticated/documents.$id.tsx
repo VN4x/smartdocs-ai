@@ -196,6 +196,22 @@ function DetailPage() {
           <Button variant="outline" size="sm" onClick={() => setEditing((v) => !v)}>
             <Pencil className="mr-1.5 h-4 w-4" /> {editing ? "Close" : "Edit"}
           </Button>
+          <Button variant="outline" size="sm" onClick={print} disabled={printing}>
+            {printing ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Printer className="mr-1.5 h-4 w-4" />
+            )}
+            Print
+          </Button>
+          <Button variant="outline" size="sm" onClick={share} disabled={sharing}>
+            {sharing ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="mr-1.5 h-4 w-4" />
+            )}
+            Send
+          </Button>
           <Button size="sm" onClick={download}>
             <Download className="mr-1.5 h-4 w-4" /> Download
           </Button>
