@@ -445,6 +445,22 @@ function UploadPage() {
               <Field label="Tags (comma separated)">
                 <Input value={form.tags} onChange={(e) => set("tags", e.target.value)} />
               </Field>
+              <Field label="Folder">
+                <Select value={folderId} onValueChange={setFolderId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="No folder" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">No folder (Unfiled)</SelectItem>
+                    {folders.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+
             </div>
             <Field label="Description">
               <Textarea
