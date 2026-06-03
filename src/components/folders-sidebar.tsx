@@ -63,9 +63,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Active folders are highlighted in red. */
+/** Active folders keep a normal background but show a red, bold title. */
 const ACTIVE_RED =
-  "data-[active=true]:bg-red-600 data-[active=true]:text-white data-[active=true]:font-medium hover:data-[active=true]:bg-red-600";
+  "data-[active=true]:bg-transparent data-[active=true]:text-red-600 data-[active=true]:font-semibold hover:data-[active=true]:bg-accent";
 
 type FolderNode = FolderRow & { children: FolderNode[] };
 
