@@ -160,11 +160,31 @@ function LibraryPage() {
           </p>
         </div>
 
-        <Button asChild>
-          <Link to="/upload">
-            <Upload className="mr-1.5 h-4 w-4" /> Upload document
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={(v) => v && setView(v as ViewMode)}
+            variant="outline"
+            size="sm"
+          >
+            <ToggleGroupItem value="large" aria-label="Large thumbnails">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="small" aria-label="Small thumbnails">
+              <Grid2x2 className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="Numbered list">
+              <ListIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+
+          <Button asChild>
+            <Link to="/upload">
+              <Upload className="mr-1.5 h-4 w-4" /> Upload document
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="p-4">
