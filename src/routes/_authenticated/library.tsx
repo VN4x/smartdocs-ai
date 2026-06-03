@@ -68,6 +68,7 @@ function LibraryPage() {
   const [objekt, setObjekt] = useState(ALL);
   const [materjal, setMaterjal] = useState(ALL);
   const [supplier, setSupplier] = useState(ALL);
+  const [view, setView] = useState<ViewMode>("large");
 
   const types = useMemo(() => distinctValues(docs, "tuup"), [docs]);
   const objects = useMemo(() => distinctValues(docs, "objekt"), [docs]);
