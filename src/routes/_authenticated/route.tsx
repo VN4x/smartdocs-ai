@@ -34,7 +34,7 @@ function AuthenticatedLayout() {
                 <SidebarTrigger />
                 <Link to="/library" className="flex items-center gap-2 font-semibold tracking-tight">
                   <FileStack className="h-6 w-6 text-primary" />
-                  <span>Document Library</span>
+                  <span className="lowercase">kvaliteetaken</span>
                 </Link>
               </div>
               <nav className="flex items-center gap-1">

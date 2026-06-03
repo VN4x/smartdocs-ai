@@ -63,9 +63,9 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Active folders are highlighted in red. */
+/** Active folders keep a normal background but show a red, bold title. */
 const ACTIVE_RED =
-  "data-[active=true]:bg-red-600 data-[active=true]:text-white data-[active=true]:font-medium hover:data-[active=true]:bg-red-600";
+  "data-[active=true]:bg-transparent data-[active=true]:text-red-600 data-[active=true]:font-semibold hover:data-[active=true]:bg-accent";
 
 type FolderNode = FolderRow & { children: FolderNode[] };
 
@@ -207,7 +207,8 @@ export function FoldersSidebar() {
             <Plus /> <span className="sr-only">New folder</span>
           </SidebarGroupAction>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-[3mm]">
+
               {tree.length === 0 ? (
                 <p className="px-2 py-1.5 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
                   No folders yet.
@@ -391,7 +392,7 @@ function FolderItem({
       </DropdownMenu>
 
       {hasChildren && open && (
-        <SidebarMenuSub className="mr-0 pr-0">
+        <SidebarMenuSub className="mr-0 gap-[3mm] pr-0">
           {node.children.map((child) => (
             <FolderItem
               key={child.id}

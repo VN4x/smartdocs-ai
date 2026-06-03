@@ -6,6 +6,7 @@ import {
   listFolders,
   distinctValues,
   extOf,
+  formatDocNumber,
   type DocumentRow,
 } from "@/lib/documents";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Search, FileText, Upload, X, Loader2 } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Search,
+  FileText,
+  Upload,
+  X,
+  Loader2,
+  LayoutGrid,
+  Grid2x2,
+  List as ListIcon,
+} from "lucide-react";
+
+type ViewMode = "large" | "small" | "list";
 
 type LibrarySearch = { folder?: string };
 
@@ -55,6 +68,7 @@ function LibraryPage() {
   const [objekt, setObjekt] = useState(ALL);
   const [materjal, setMaterjal] = useState(ALL);
   const [supplier, setSupplier] = useState(ALL);
+  const [view, setView] = useState<ViewMode>("large");
 
   const types = useMemo(() => distinctValues(docs, "tuup"), [docs]);
   const objects = useMemo(() => distinctValues(docs, "objekt"), [docs]);
@@ -146,11 +160,31 @@ function LibraryPage() {
           </p>
         </div>
 
-        <Button asChild>
-          <Link to="/upload">
-            <Upload className="mr-1.5 h-4 w-4" /> Upload document
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <ToggleGroup
+            type="single"
+            value={view}
+            onValueChange={(v) => v && setView(v as ViewMode)}
+            variant="outline"
+            size="sm"
+          >
+            <ToggleGroupItem value="large" aria-label="Large thumbnails">
+              <LayoutGrid className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="small" aria-label="Small thumbnails">
+              <Grid2x2 className="h-4 w-4" />
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="Numbered list">
+              <ListIcon className="h-4 w-4" />
+            </ToggleGroupItem>
+          </ToggleGroup>
+
+          <Button asChild>
+            <Link to="/upload">
+              <Upload className="mr-1.5 h-4 w-4" /> Upload document
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <Card className="p-4">
@@ -200,10 +234,22 @@ function LibraryPage() {
             </Button>
           ) : null}
         </Card>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      ) : view === "list" ? (
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((d) => (
-            <DocCard key={d.id} doc={d} />
+            <DocRow key={d.id} doc={d} />
+          ))}
+        </div>
+      ) : (
+        <div
+          className={
+            view === "small"
+              ? "grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          }
+        >
+          {filtered.map((d) => (
+            <DocCard key={d.id} doc={d} compact={view === "small"} />
           ))}
         </div>
       )}
@@ -239,33 +285,64 @@ function FilterSelect({
   );
 }
 
-function DocCard({ doc }: { doc: DocumentRow }) {
+function DocCard({ doc, compact = false }: { doc: DocumentRow; compact?: boolean }) {
   const ext = doc.original_ext || extOf(doc.file_name);
   return (
     <Link to="/documents/$id" params={{ id: doc.id }}>
-      <Card className="flex h-full flex-col gap-3 p-4 transition-colors hover:border-primary/50 hover:bg-accent/40">
+      <Card
+        className={
+          "flex h-full flex-col transition-colors hover:border-primary/50 hover:bg-accent/40 " +
+          (compact ? "gap-2 p-3" : "gap-3 p-4")
+        }
+      >
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 overflow-hidden">
-            <FileText className="h-5 w-5 shrink-0 text-primary" />
-            <span className="truncate font-medium" title={doc.title}>
+            <Badge variant="secondary" className="shrink-0 font-mono text-[10px]">
+              #{formatDocNumber(doc.doc_number)}
+            </Badge>
+            <span className={"truncate font-medium" + (compact ? " text-sm" : "")} title={doc.title}>
               {doc.title}
             </span>
           </div>
-          {ext ? (
+          {ext && !compact ? (
             <Badge variant="secondary" className="shrink-0 uppercase">
               {ext}
             </Badge>
           ) : null}
         </div>
-        <div className="flex flex-wrap gap-1.5 text-xs">
-          {doc.tuup ? <Badge variant="outline">{doc.tuup}</Badge> : null}
-          {doc.objekt ? <Badge variant="outline">{doc.objekt}</Badge> : null}
-          {doc.materjal ? <Badge variant="outline">{doc.materjal}</Badge> : null}
-        </div>
-        <div className="mt-auto flex items-center justify-between text-xs text-muted-foreground">
+        {!compact && (
+          <div className="flex flex-wrap gap-1.5 text-xs">
+            {doc.tuup ? <Badge variant="outline">{doc.tuup}</Badge> : null}
+            {doc.objekt ? <Badge variant="outline">{doc.objekt}</Badge> : null}
+            {doc.materjal ? <Badge variant="outline">{doc.materjal}</Badge> : null}
+          </div>
+        )}
+        <div className="mt-auto flex items-center justify-between gap-2 text-xs text-muted-foreground">
           <span className="truncate">{doc.supplier || "—"}</span>
-          <span>{doc.doc_date ?? new Date(doc.created_at).toLocaleDateString()}</span>
+          <span className="shrink-0">
+            {doc.doc_date ?? new Date(doc.created_at).toLocaleDateString()}
+          </span>
         </div>
+      </Card>
+    </Link>
+  );
+}
+
+function DocRow({ doc }: { doc: DocumentRow }) {
+  const ext = doc.original_ext || extOf(doc.file_name);
+  return (
+    <Link to="/documents/$id" params={{ id: doc.id }}>
+      <Card className="flex items-center gap-3 px-3 py-2 transition-colors hover:border-primary/50 hover:bg-accent/40">
+        <Badge variant="secondary" className="shrink-0 font-mono text-[10px]">
+          #{formatDocNumber(doc.doc_number)}
+        </Badge>
+        <FileText className="h-4 w-4 shrink-0 text-primary" />
+        <span className="min-w-0 flex-1 truncate text-sm font-medium" title={doc.title}>
+          {doc.title}
+        </span>
+        {ext ? (
+          <span className="shrink-0 text-[10px] uppercase text-muted-foreground">{ext}</span>
+        ) : null}
       </Card>
     </Link>
   );

@@ -17,6 +17,12 @@ export const FIELD_LABELS = {
   doc_date: "Date",
 } as const;
 
+/** Display a document's system number as a zero-padded code, e.g. 0001. */
+export function formatDocNumber(n: number | null | undefined): string {
+  if (n == null) return "—";
+  return String(n).padStart(4, "0");
+}
+
 export function extOf(fileName: string): string {
   const idx = fileName.lastIndexOf(".");
   return idx >= 0 ? fileName.slice(idx + 1).toLowerCase() : "";
@@ -103,9 +109,15 @@ export type DocumentMetadata = Omit<
 
 export async function createDocument(payload: DocumentMetadata): Promise<DocumentRow> {
   const { data: userData } = await supabase.auth.getUser();
+  const u = userData.user;
+  const uploaderName =
+    (u?.user_metadata?.full_name as string | undefined) ||
+    (u?.user_metadata?.name as string | undefined) ||
+    u?.email ||
+    null;
   const { data, error } = await supabase
     .from("documents")
-    .insert({ ...payload, uploaded_by: userData.user?.id ?? null })
+    .insert({ ...payload, uploaded_by: u?.id ?? null, uploaded_by_name: uploaderName })
     .select("*")
     .single();
   if (error) throw error;
