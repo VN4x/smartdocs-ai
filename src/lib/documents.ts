@@ -17,6 +17,12 @@ export const FIELD_LABELS = {
   doc_date: "Date",
 } as const;
 
+/** Display a document's system number as a zero-padded code, e.g. 0001. */
+export function formatDocNumber(n: number | null | undefined): string {
+  if (n == null) return "—";
+  return String(n).padStart(4, "0");
+}
+
 export function extOf(fileName: string): string {
   const idx = fileName.lastIndexOf(".");
   return idx >= 0 ? fileName.slice(idx + 1).toLowerCase() : "";
