@@ -133,6 +133,11 @@
 }
 
 @layer base {
+  /* Bump every rem-based size by ~11% for better readability. */
+  html {
+    font-size: 111%;
+  }
+
   * {
     border-color: var(--color-border);
   }
