@@ -235,10 +235,14 @@ function DetailPage() {
         <div className="flex items-center gap-3">
           <FileText className="h-7 w-7 text-primary" />
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{doc.title}</h1>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="font-mono">#{formatDocNumber(doc.doc_number)}</Badge>
+              <h1 className="text-2xl font-semibold tracking-tight">{doc.title}</h1>
+            </div>
             <p className="text-sm text-muted-foreground">
               {doc.file_name} · {formatBytes(doc.file_size)}
               {ext ? <span className="uppercase"> · {ext}</span> : null}
+              {doc.uploaded_by_name ? ` · uploaded by ${doc.uploaded_by_name}` : ""}
             </p>
           </div>
         </div>
