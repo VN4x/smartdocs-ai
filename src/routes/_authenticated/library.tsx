@@ -67,12 +67,34 @@ function LibraryPage() {
     return null;
   }, [folder, folders]);
 
+  // Selected folder + all its descendant subfolders.
+  const folderScope = useMemo(() => {
+    if (!folder || folder === "unfiled") return new Set<string>();
+    const childrenOf = new Map<string, string[]>();
+    for (const f of folders) {
+      if (f.parent_id) {
+        const arr = childrenOf.get(f.parent_id) ?? [];
+        arr.push(f.id);
+        childrenOf.set(f.parent_id, arr);
+      }
+    }
+    const ids = new Set<string>();
+    const stack = [folder];
+    while (stack.length) {
+      const id = stack.pop()!;
+      if (ids.has(id)) continue;
+      ids.add(id);
+      for (const c of childrenOf.get(id) ?? []) stack.push(c);
+    }
+    return ids;
+  }, [folder, folders]);
+
   // Documents scoped to the selected folder (before search/metadata filters).
   const scoped = useMemo(() => {
     if (folder === "unfiled") return docs.filter((d) => !d.folder_id);
-    if (folder) return docs.filter((d) => d.folder_id === folder);
+    if (folder) return docs.filter((d) => d.folder_id && folderScope.has(d.folder_id));
     return docs;
-  }, [docs, folder]);
+  }, [docs, folder, folderScope]);
 
   const filtered = useMemo(() => {
     const q = normalize(search.trim());
