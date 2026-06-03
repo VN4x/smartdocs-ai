@@ -109,9 +109,15 @@ export type DocumentMetadata = Omit<
 
 export async function createDocument(payload: DocumentMetadata): Promise<DocumentRow> {
   const { data: userData } = await supabase.auth.getUser();
+  const u = userData.user;
+  const uploaderName =
+    (u?.user_metadata?.full_name as string | undefined) ||
+    (u?.user_metadata?.name as string | undefined) ||
+    u?.email ||
+    null;
   const { data, error } = await supabase
     .from("documents")
-    .insert({ ...payload, uploaded_by: userData.user?.id ?? null })
+    .insert({ ...payload, uploaded_by: u?.id ?? null, uploaded_by_name: uploaderName })
     .select("*")
     .single();
   if (error) throw error;
