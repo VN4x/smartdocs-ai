@@ -10,6 +10,7 @@ import {
   listDocuments,
   listDocumentTypes,
   listFolders,
+  folderOptions,
   distinctValues,
   formatBytes,
   isImageFile,
@@ -452,9 +453,9 @@ function UploadPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">No folder (Unfiled)</SelectItem>
-                    {folders.map((f) => (
+                    {folderOptions(folders).map((f) => (
                       <SelectItem key={f.id} value={f.id}>
-                        {f.name}
+                        <span style={{ paddingLeft: f.depth * 12 }}>{f.name}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
