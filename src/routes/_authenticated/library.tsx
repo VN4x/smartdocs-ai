@@ -6,6 +6,7 @@ import {
   listFolders,
   distinctValues,
   extOf,
+  formatDocNumber,
   type DocumentRow,
 } from "@/lib/documents";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { Search, FileText, Upload, X, Loader2 } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Search,
+  FileText,
+  Upload,
+  X,
+  Loader2,
+  LayoutGrid,
+  Grid2x2,
+  List as ListIcon,
+} from "lucide-react";
+
+type ViewMode = "large" | "small" | "list";
 
 type LibrarySearch = { folder?: string };
 
