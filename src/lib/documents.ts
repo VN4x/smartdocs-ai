@@ -240,3 +240,29 @@ export async function moveDocumentToFolder(
   if (error) throw error;
 }
 
+/** Folders sorted hierarchically, each with a depth and a full "Parent / Child" path label. */
+export function folderOptions(
+  folders: FolderRow[],
+): Array<{ id: string; name: string; depth: number; path: string }> {
+  const childrenOf = new Map<string | null, FolderRow[]>();
+  for (const f of folders) {
+    const key = f.parent_id ?? null;
+    const arr = childrenOf.get(key) ?? [];
+    arr.push(f);
+    childrenOf.set(key, arr);
+  }
+  for (const arr of childrenOf.values()) arr.sort((a, b) => a.name.localeCompare(b.name));
+
+  const out: Array<{ id: string; name: string; depth: number; path: string }> = [];
+  const walk = (parentId: string | null, depth: number, prefix: string) => {
+    for (const f of childrenOf.get(parentId) ?? []) {
+      const path = prefix ? `${prefix} / ${f.name}` : f.name;
+      out.push({ id: f.id, name: f.name, depth, path });
+      walk(f.id, depth + 1, path);
+    }
+  };
+  walk(null, 0, "");
+  return out;
+}
+
+
