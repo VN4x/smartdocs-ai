@@ -12,6 +12,7 @@ import {
   isPreviewable,
   isCurrentUserAdmin,
   formatBytes,
+  formatDocNumber,
   extOf,
 } from "@/lib/documents";
 import { Button } from "@/components/ui/button";
