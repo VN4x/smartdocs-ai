@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { FoldersSidebar } from "@/components/folders-sidebar";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useT } from "@/lib/i18n";
 import { FileStack, Upload, LogOut, Library } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated")({
