@@ -10,6 +10,7 @@ import {
   listDocuments,
   listDocumentTypes,
   listFolders,
+  folderOptions,
   distinctValues,
   formatBytes,
   isImageFile,

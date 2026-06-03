@@ -8,6 +8,7 @@ import {
   deleteDocument,
   updateDocument,
   listFolders,
+  folderOptions,
   isPreviewable,
   isCurrentUserAdmin,
   formatBytes,
