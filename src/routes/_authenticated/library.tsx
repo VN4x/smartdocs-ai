@@ -234,10 +234,22 @@ function LibraryPage() {
             </Button>
           ) : null}
         </Card>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      ) : view === "list" ? (
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
           {filtered.map((d) => (
-            <DocCard key={d.id} doc={d} />
+            <DocRow key={d.id} doc={d} />
+          ))}
+        </div>
+      ) : (
+        <div
+          className={
+            view === "small"
+              ? "grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          }
+        >
+          {filtered.map((d) => (
+            <DocCard key={d.id} doc={d} compact={view === "small"} />
           ))}
         </div>
       )}
