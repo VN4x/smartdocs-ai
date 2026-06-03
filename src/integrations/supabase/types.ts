@@ -37,6 +37,7 @@ export type Database = {
           created_at: string
           description: string | null
           doc_date: string | null
+          doc_number: number
           file_name: string
           file_path: string
           file_size: number | null
@@ -54,11 +55,13 @@ export type Database = {
           tuup: string | null
           updated_at: string
           uploaded_by: string | null
+          uploaded_by_name: string | null
         }
         Insert: {
           created_at?: string
           description?: string | null
           doc_date?: string | null
+          doc_number?: number
           file_name: string
           file_path: string
           file_size?: number | null
@@ -76,11 +79,13 @@ export type Database = {
           tuup?: string | null
           updated_at?: string
           uploaded_by?: string | null
+          uploaded_by_name?: string | null
         }
         Update: {
           created_at?: string
           description?: string | null
           doc_date?: string | null
+          doc_number?: number
           file_name?: string
           file_path?: string
           file_size?: number | null
@@ -98,6 +103,7 @@ export type Database = {
           tuup?: string | null
           updated_at?: string
           uploaded_by?: string | null
+          uploaded_by_name?: string | null
         }
         Relationships: [
           {
