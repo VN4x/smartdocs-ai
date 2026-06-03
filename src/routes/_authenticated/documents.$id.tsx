@@ -130,6 +130,20 @@ function DetailPage() {
     try {
       const url = await getSignedUrl(doc.file_path);
       const isImage = (doc.mime_type ?? "").startsWith("image/");
+
+      // PDFs (and anything non-image) print most reliably from the browser's
+      // own viewer. Opening the file URL directly avoids the app chrome /
+      // framed layout that made earlier prints come out blank.
+      if (!isImage) {
+        const win = window.open(url, "_blank");
+        if (!win) {
+          toast.error("Allow pop-ups to print this document.");
+          return;
+        }
+        toast.info("Opened in a new tab — use your browser's Print (Ctrl/⌘+P).");
+        return;
+      }
+
       const win = window.open("", "_blank");
       if (!win) {
         toast.error("Allow pop-ups to print this document.");
@@ -139,9 +153,7 @@ function DetailPage() {
       // stored XSS via a maliciously named document.
       const safeUrl = encodeURI(url).replace(/"/g, "%22");
       const safeTitle = escapeHtml(doc.title);
-      const body = isImage
-        ? `<img src="${safeUrl}" onload="setTimeout(() => window.print(), 200)" style="max-width:100%;height:auto;display:block;margin:0 auto" />`
-        : `<iframe src="${safeUrl}" onload="setTimeout(() => window.print(), 400)" style="border:0;width:100%;height:100vh"></iframe>`;
+      const body = `<img src="${safeUrl}" onload="setTimeout(() => window.print(), 200)" style="max-width:100%;height:auto;display:block;margin:0 auto" />`;
       win.document.write(
         `<!doctype html><html><head><title>${safeTitle}</title><meta charset="utf-8" /><style>html,body{margin:0;padding:0;height:100%}</style></head><body>${body}</body></html>`,
       );
