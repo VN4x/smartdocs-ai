@@ -43,18 +43,20 @@ function AuthenticatedLayout() {
               <nav className="flex items-center gap-1">
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/library" activeProps={{ className: "bg-accent" }}>
-                    <Library className="mr-1.5 h-4 w-4" /> Library
+                    <Library className="mr-1.5 h-4 w-4" /> {t("nav.library")}
                   </Link>
                 </Button>
                 <Button variant="ghost" size="sm" asChild>
                   <Link to="/upload" activeProps={{ className: "bg-accent" }}>
-                    <Upload className="mr-1.5 h-4 w-4" /> Upload
+                    <Upload className="mr-1.5 h-4 w-4" /> {t("nav.upload")}
                   </Link>
                 </Button>
                 <Button variant="ghost" size="sm" onClick={signOut}>
-                  <LogOut className="mr-1.5 h-4 w-4" /> Sign out
+                  <LogOut className="mr-1.5 h-4 w-4" /> {t("nav.signOut")}
                 </Button>
+                <LanguageSwitcher />
               </nav>
+
             </div>
           </header>
           <main className="mx-auto w-full max-w-6xl px-4 py-6">
