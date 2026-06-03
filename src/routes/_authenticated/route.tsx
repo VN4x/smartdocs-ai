@@ -19,6 +19,7 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthenticatedLayout() {
   const router = useRouter();
+  const { t } = useT();
 
   async function signOut() {
     await supabase.auth.signOut();
