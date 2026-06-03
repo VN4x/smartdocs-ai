@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   listFolders,
@@ -21,6 +21,7 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -57,7 +58,35 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
+  ChevronRight,
+  FolderPlus,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+/** Active folders are highlighted in red. */
+const ACTIVE_RED =
+  "data-[active=true]:bg-red-600 data-[active=true]:text-white data-[active=true]:font-medium hover:data-[active=true]:bg-red-600";
+
+type FolderNode = FolderRow & { children: FolderNode[] };
+
+function buildTree(folders: FolderRow[]): FolderNode[] {
+  const byId = new Map<string, FolderNode>();
+  folders.forEach((f) => byId.set(f.id, { ...f, children: [] }));
+  const roots: FolderNode[] = [];
+  byId.forEach((node) => {
+    if (node.parent_id && byId.has(node.parent_id)) {
+      byId.get(node.parent_id)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+  const sortRec = (nodes: FolderNode[]) => {
+    nodes.sort((a, b) => a.name.localeCompare(b.name));
+    nodes.forEach((n) => sortRec(n.children));
+  };
+  sortRec(roots);
+  return roots;
+}
 
 export function FoldersSidebar() {
   const queryClient = useQueryClient();
@@ -72,8 +101,11 @@ export function FoldersSidebar() {
   const { data: docs = [] } = useQuery({ queryKey: ["documents"], queryFn: listDocuments });
   const { data: isAdmin = false } = useQuery({ queryKey: ["is-admin"], queryFn: isCurrentUserAdmin });
 
+  const tree = useMemo(() => buildTree(folders), [folders]);
+
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
+  const [createParent, setCreateParent] = useState<FolderRow | null>(null);
   const [renaming, setRenaming] = useState<FolderRow | null>(null);
   const [renameName, setRenameName] = useState("");
   const [deleting, setDeleting] = useState<FolderRow | null>(null);
@@ -87,15 +119,21 @@ export function FoldersSidebar() {
     await queryClient.invalidateQueries({ queryKey: ["documents"] });
   }
 
+  function openCreate(parent: FolderRow | null) {
+    setCreateParent(parent);
+    setNewName("");
+    setCreateOpen(true);
+  }
+
   async function submitCreate() {
     if (!newName.trim()) return;
     setBusy(true);
     try {
-      await createFolder(newName);
+      await createFolder(newName, createParent?.id ?? null);
       await refresh();
       setNewName("");
       setCreateOpen(false);
-      toast.success("Folder created.");
+      toast.success(createParent ? "Subfolder created." : "Folder created.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Couldn't create folder.");
     } finally {
@@ -141,7 +179,7 @@ export function FoldersSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={currentFolder === null}>
+                <SidebarMenuButton asChild isActive={currentFolder === null} className={ACTIVE_RED}>
                   <Link to="/library" search={{ folder: undefined }}>
                     <Files className="h-4 w-4" />
                     <span>All documents</span>
@@ -149,12 +187,12 @@ export function FoldersSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={currentFolder === "unfiled"}>
+                <SidebarMenuButton asChild isActive={currentFolder === "unfiled"} className={ACTIVE_RED}>
                   <Link to="/library" search={{ folder: "unfiled" }}>
                     <Inbox className="h-4 w-4" />
                     <span>Unfiled</span>
                     {unfiledCount > 0 && (
-                      <span className="ml-auto text-xs text-muted-foreground">{unfiledCount}</span>
+                      <span className="ml-auto text-xs opacity-70">{unfiledCount}</span>
                     )}
                   </Link>
                 </SidebarMenuButton>
@@ -165,60 +203,31 @@ export function FoldersSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel>Folders</SidebarGroupLabel>
-          <SidebarGroupAction title="New folder" onClick={() => setCreateOpen(true)}>
+          <SidebarGroupAction title="New folder" onClick={() => openCreate(null)}>
             <Plus /> <span className="sr-only">New folder</span>
           </SidebarGroupAction>
           <SidebarGroupContent>
             <SidebarMenu>
-              {folders.length === 0 ? (
+              {tree.length === 0 ? (
                 <p className="px-2 py-1.5 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
                   No folders yet.
                 </p>
               ) : (
-                folders.map((f) => {
-                  const active = currentFolder === f.id;
-                  return (
-                    <SidebarMenuItem key={f.id}>
-                      <SidebarMenuButton asChild isActive={active}>
-                        <Link to="/library" search={{ folder: f.id }}>
-                          {active ? <FolderOpen className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
-                          <span className="truncate">{f.name}</span>
-                          {countFor(f.id) > 0 && (
-                            <span className="ml-auto text-xs text-muted-foreground">
-                              {countFor(f.id)}
-                            </span>
-                          )}
-                        </Link>
-                      </SidebarMenuButton>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction showOnHover>
-                            <MoreHorizontal />
-                            <span className="sr-only">Folder actions</span>
-                          </SidebarMenuAction>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent side="right" align="start">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setRenaming(f);
-                              setRenameName(f.name);
-                            }}
-                          >
-                            <Pencil className="mr-2 h-4 w-4" /> Rename
-                          </DropdownMenuItem>
-                          {isAdmin && (
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => setDeleting(f)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" /> Delete
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </SidebarMenuItem>
-                  );
-                })
+                tree.map((node) => (
+                  <FolderItem
+                    key={node.id}
+                    node={node}
+                    currentFolder={currentFolder}
+                    countFor={countFor}
+                    isAdmin={isAdmin}
+                    onCreateSub={openCreate}
+                    onRename={(f) => {
+                      setRenaming(f);
+                      setRenameName(f.name);
+                    }}
+                    onDelete={setDeleting}
+                  />
+                ))
               )}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -229,7 +238,9 @@ export function FoldersSidebar() {
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>New folder</DialogTitle>
+            <DialogTitle>
+              {createParent ? `New subfolder in "${createParent.name}"` : "New folder"}
+            </DialogTitle>
           </DialogHeader>
           <Input
             autoFocus
@@ -278,7 +289,8 @@ export function FoldersSidebar() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete "{deleting?.name}"?</AlertDialogTitle>
             <AlertDialogDescription>
-              The folder is removed. Documents inside it are kept and moved to Unfiled.
+              The folder is removed. Documents inside it are kept and moved to Unfiled. Any
+              subfolders are also affected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -290,5 +302,111 @@ export function FoldersSidebar() {
         </AlertDialogContent>
       </AlertDialog>
     </Sidebar>
+  );
+}
+
+function FolderItem({
+  node,
+  depth = 0,
+  currentFolder,
+  countFor,
+  isAdmin,
+  onCreateSub,
+  onRename,
+  onDelete,
+}: {
+  node: FolderNode;
+  depth?: number;
+  currentFolder: string | null;
+  countFor: (id: string) => number;
+  isAdmin: boolean;
+  onCreateSub: (parent: FolderRow) => void;
+  onRename: (f: FolderRow) => void;
+  onDelete: (f: FolderRow) => void;
+}) {
+  const active = currentFolder === node.id;
+  const hasChildren = node.children.length > 0;
+  // Expand if this node or any descendant is the active folder.
+  const containsActive = useMemo(() => {
+    const walk = (n: FolderNode): boolean =>
+      n.id === currentFolder || n.children.some(walk);
+    return walk(node);
+  }, [node, currentFolder]);
+  const [open, setOpen] = useState(containsActive);
+
+  return (
+    <SidebarMenuItem>
+      <SidebarMenuButton asChild isActive={active} className={ACTIVE_RED}>
+        <Link to="/library" search={{ folder: node.id }}>
+          {hasChildren ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setOpen((v) => !v);
+              }}
+              className="shrink-0"
+              aria-label={open ? "Collapse" : "Expand"}
+            >
+              <ChevronRight
+                className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-90")}
+              />
+            </button>
+          ) : (
+            active ? <FolderOpen className="h-4 w-4" /> : <Folder className="h-4 w-4" />
+          )}
+          <span className="truncate">{node.name}</span>
+          {countFor(node.id) > 0 && (
+            <span className={cn("ml-auto text-xs", active ? "opacity-70" : "text-muted-foreground")}>
+              {countFor(node.id)}
+            </span>
+          )}
+        </Link>
+      </SidebarMenuButton>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <SidebarMenuAction showOnHover>
+            <MoreHorizontal />
+            <span className="sr-only">Folder actions</span>
+          </SidebarMenuAction>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start">
+          <DropdownMenuItem onClick={() => onCreateSub(node)}>
+            <FolderPlus className="mr-2 h-4 w-4" /> New subfolder
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onRename(node)}>
+            <Pencil className="mr-2 h-4 w-4" /> Rename
+          </DropdownMenuItem>
+          {isAdmin && (
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => onDelete(node)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Delete
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {hasChildren && open && (
+        <SidebarMenuSub className="mr-0 pr-0">
+          {node.children.map((child) => (
+            <FolderItem
+              key={child.id}
+              node={child}
+              depth={depth + 1}
+              currentFolder={currentFolder}
+              countFor={countFor}
+              isAdmin={isAdmin}
+              onCreateSub={onCreateSub}
+              onRename={onRename}
+              onDelete={onDelete}
+            />
+          ))}
+        </SidebarMenuSub>
+      )}
+    </SidebarMenuItem>
   );
 }
