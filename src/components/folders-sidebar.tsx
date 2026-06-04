@@ -272,6 +272,7 @@ export function FoldersSidebar() {
                       setRenameName(f.name);
                     }}
                     onDelete={setDeleting}
+                    onMove={openMove}
                   />
                 ))
               )}
