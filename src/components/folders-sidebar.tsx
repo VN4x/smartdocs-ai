@@ -348,6 +348,39 @@ export function FoldersSidebar() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Move folder */}
+      <Dialog open={!!moving} onOpenChange={(open) => !open && setMoving(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move "{moving?.name}"</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Choose a new parent folder.</p>
+            <Select value={moveTarget} onValueChange={setMoveTarget}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select destination" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TOP_LEVEL}>Top level (no parent)</SelectItem>
+                {moveOptions.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    {o.path}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoving(null)}>
+              Cancel
+            </Button>
+            <Button onClick={submitMove} disabled={busy}>
+              Move
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sidebar>
   );
 }
