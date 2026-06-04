@@ -194,6 +194,28 @@ export function FoldersSidebar() {
     }
   }
 
+  function openMove(folder: FolderRow) {
+    setMoving(folder);
+    setMoveTarget(folder.parent_id ?? TOP_LEVEL);
+  }
+
+  async function submitMove() {
+    if (!moving) return;
+    setBusy(true);
+    try {
+      await moveFolder(moving.id, moveTarget === TOP_LEVEL ? null : moveTarget);
+      await refresh();
+      setMoving(null);
+      toast.success("Folder moved.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't move folder.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
