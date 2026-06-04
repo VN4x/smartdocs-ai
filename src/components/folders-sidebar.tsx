@@ -7,6 +7,9 @@ import {
   createFolder,
   renameFolder,
   deleteFolder,
+  moveFolder,
+  descendantFolderIds,
+  folderOptions,
   isCurrentUserAdmin,
   type FolderRow,
 } from "@/lib/documents";
@@ -37,6 +40,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -60,8 +70,12 @@ import {
   Trash2,
   ChevronRight,
   FolderPlus,
+  FolderInput,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const TOP_LEVEL = "__top__";
+
 
 /** Active folders keep a normal background but show a red, bold title. */
 const ACTIVE_RED =
@@ -109,7 +123,16 @@ export function FoldersSidebar() {
   const [renaming, setRenaming] = useState<FolderRow | null>(null);
   const [renameName, setRenameName] = useState("");
   const [deleting, setDeleting] = useState<FolderRow | null>(null);
+  const [moving, setMoving] = useState<FolderRow | null>(null);
+  const [moveTarget, setMoveTarget] = useState<string>(TOP_LEVEL);
   const [busy, setBusy] = useState(false);
+
+  const moveOptions = useMemo(() => {
+    if (!moving) return [];
+    const blocked = descendantFolderIds(folders, moving.id);
+    blocked.add(moving.id);
+    return folderOptions(folders).filter((o) => !blocked.has(o.id));
+  }, [moving, folders]);
 
   const unfiledCount = docs.filter((d) => !d.folder_id).length;
   const countFor = (id: string) => docs.filter((d) => d.folder_id === id).length;
@@ -171,6 +194,28 @@ export function FoldersSidebar() {
     }
   }
 
+  function openMove(folder: FolderRow) {
+    setMoving(folder);
+    setMoveTarget(folder.parent_id ?? TOP_LEVEL);
+  }
+
+  async function submitMove() {
+    if (!moving) return;
+    setBusy(true);
+    try {
+      await moveFolder(moving.id, moveTarget === TOP_LEVEL ? null : moveTarget);
+      await refresh();
+      setMoving(null);
+      toast.success("Folder moved.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't move folder.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
@@ -227,6 +272,7 @@ export function FoldersSidebar() {
                       setRenameName(f.name);
                     }}
                     onDelete={setDeleting}
+                    onMove={openMove}
                   />
                 ))
               )}
@@ -302,6 +348,39 @@ export function FoldersSidebar() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Move folder */}
+      <Dialog open={!!moving} onOpenChange={(open) => !open && setMoving(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move "{moving?.name}"</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Choose a new parent folder.</p>
+            <Select value={moveTarget} onValueChange={setMoveTarget}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select destination" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={TOP_LEVEL}>Top level (no parent)</SelectItem>
+                {moveOptions.map((o) => (
+                  <SelectItem key={o.id} value={o.id}>
+                    {o.path}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMoving(null)}>
+              Cancel
+            </Button>
+            <Button onClick={submitMove} disabled={busy}>
+              Move
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sidebar>
   );
 }
@@ -315,6 +394,7 @@ function FolderItem({
   onCreateSub,
   onRename,
   onDelete,
+  onMove,
 }: {
   node: FolderNode;
   depth?: number;
@@ -324,6 +404,7 @@ function FolderItem({
   onCreateSub: (parent: FolderRow) => void;
   onRename: (f: FolderRow) => void;
   onDelete: (f: FolderRow) => void;
+  onMove: (f: FolderRow) => void;
 }) {
   const active = currentFolder === node.id;
   const hasChildren = node.children.length > 0;
@@ -380,6 +461,9 @@ function FolderItem({
           <DropdownMenuItem onClick={() => onRename(node)}>
             <Pencil className="mr-2 h-4 w-4" /> Rename
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onMove(node)}>
+            <FolderInput className="mr-2 h-4 w-4" /> Move to…
+          </DropdownMenuItem>
           {isAdmin && (
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
@@ -404,6 +488,7 @@ function FolderItem({
               onCreateSub={onCreateSub}
               onRename={onRename}
               onDelete={onDelete}
+              onMove={onMove}
             />
           ))}
         </SidebarMenuSub>

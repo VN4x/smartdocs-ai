@@ -252,6 +252,37 @@ export async function moveDocumentToFolder(
   if (error) throw error;
 }
 
+/** Re-parent a folder. Pass null to move it to the top level. */
+export async function moveFolder(id: string, parentId: string | null): Promise<void> {
+  const { error } = await supabase
+    .from("folders")
+    .update({ parent_id: parentId })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** Every folder nested anywhere beneath `rootId` (used to block invalid moves). */
+export function descendantFolderIds(folders: FolderRow[], rootId: string): Set<string> {
+  const childrenOf = new Map<string, string[]>();
+  for (const f of folders) {
+    if (!f.parent_id) continue;
+    const arr = childrenOf.get(f.parent_id) ?? [];
+    arr.push(f.id);
+    childrenOf.set(f.parent_id, arr);
+  }
+  const result = new Set<string>();
+  const walk = (id: string) => {
+    for (const c of childrenOf.get(id) ?? []) {
+      if (!result.has(c)) {
+        result.add(c);
+        walk(c);
+      }
+    }
+  };
+  walk(rootId);
+  return result;
+}
+
 /** Folders sorted hierarchically, each with a depth and a full "Parent / Child" path label. */
 export function folderOptions(
   folders: FolderRow[],
