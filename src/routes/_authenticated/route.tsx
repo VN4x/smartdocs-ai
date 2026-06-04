@@ -12,6 +12,18 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+
+    // Force a fresh email login link after 30 days, even though the session
+    // would otherwise auto-refresh indefinitely.
+    const lastSignIn = data.user.last_sign_in_at;
+    if (lastSignIn) {
+      const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+      if (Date.now() - new Date(lastSignIn).getTime() > THIRTY_DAYS) {
+        await supabase.auth.signOut();
+        throw redirect({ to: "/auth" });
+      }
+    }
+
     return { user: data.user };
   },
   component: AuthenticatedLayout,
