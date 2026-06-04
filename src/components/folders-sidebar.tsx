@@ -70,8 +70,12 @@ import {
   Trash2,
   ChevronRight,
   FolderPlus,
+  FolderInput,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const TOP_LEVEL = "__top__";
+
 
 /** Active folders keep a normal background but show a red, bold title. */
 const ACTIVE_RED =
