@@ -123,7 +123,16 @@ export function FoldersSidebar() {
   const [renaming, setRenaming] = useState<FolderRow | null>(null);
   const [renameName, setRenameName] = useState("");
   const [deleting, setDeleting] = useState<FolderRow | null>(null);
+  const [moving, setMoving] = useState<FolderRow | null>(null);
+  const [moveTarget, setMoveTarget] = useState<string>(TOP_LEVEL);
   const [busy, setBusy] = useState(false);
+
+  const moveOptions = useMemo(() => {
+    if (!moving) return [];
+    const blocked = descendantFolderIds(folders, moving.id);
+    blocked.add(moving.id);
+    return folderOptions(folders).filter((o) => !blocked.has(o.id));
+  }, [moving, folders]);
 
   const unfiledCount = docs.filter((d) => !d.folder_id).length;
   const countFor = (id: string) => docs.filter((d) => d.folder_id === id).length;
