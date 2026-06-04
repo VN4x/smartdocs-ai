@@ -488,6 +488,7 @@ function FolderItem({
               onCreateSub={onCreateSub}
               onRename={onRename}
               onDelete={onDelete}
+              onMove={onMove}
             />
           ))}
         </SidebarMenuSub>
