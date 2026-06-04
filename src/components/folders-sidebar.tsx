@@ -461,6 +461,9 @@ function FolderItem({
           <DropdownMenuItem onClick={() => onRename(node)}>
             <Pencil className="mr-2 h-4 w-4" /> Rename
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onMove(node)}>
+            <FolderInput className="mr-2 h-4 w-4" /> Move to…
+          </DropdownMenuItem>
           {isAdmin && (
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
