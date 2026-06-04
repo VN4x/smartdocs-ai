@@ -394,6 +394,7 @@ function FolderItem({
   onCreateSub,
   onRename,
   onDelete,
+  onMove,
 }: {
   node: FolderNode;
   depth?: number;
@@ -403,6 +404,7 @@ function FolderItem({
   onCreateSub: (parent: FolderRow) => void;
   onRename: (f: FolderRow) => void;
   onDelete: (f: FolderRow) => void;
+  onMove: (f: FolderRow) => void;
 }) {
   const active = currentFolder === node.id;
   const hasChildren = node.children.length > 0;
