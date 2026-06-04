@@ -7,6 +7,9 @@ import {
   createFolder,
   renameFolder,
   deleteFolder,
+  moveFolder,
+  descendantFolderIds,
+  folderOptions,
   isCurrentUserAdmin,
   type FolderRow,
 } from "@/lib/documents";
