@@ -96,14 +96,14 @@ function LibraryPage() {
   useEffect(() => {
     const handle = setTimeout(() => {
       const next = searchInput.trim() || undefined;
-      if (next !== q) navigate({ search: (prev) => ({ ...prev, q: next }) });
+      if (next !== q) navigate({ search: (prev: LibrarySearch) => ({ ...prev, q: next }) });
     }, 300);
     return () => clearTimeout(handle);
   }, [searchInput, q, navigate]);
 
   function setFilter(key: keyof LibrarySearch, value: string) {
     const next = value === ALL ? undefined : value;
-    navigate({ search: (prev) => ({ ...prev, [key]: next }) });
+    navigate({ search: (prev: LibrarySearch) => ({ ...prev, [key]: next }) });
   }
 
   const types = useMemo(() => distinctValues(docs, "tuup"), [docs]);
@@ -190,7 +190,7 @@ function LibraryPage() {
   function clearFilters() {
     setSearchInput("");
     navigate({
-      search: (prev) => ({
+      search: (prev: LibrarySearch) => ({
         folder: prev.folder,
         q: undefined,
         tuup: undefined,
