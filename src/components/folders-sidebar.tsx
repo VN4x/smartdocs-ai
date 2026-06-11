@@ -73,6 +73,7 @@ import {
   FolderInput,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 const TOP_LEVEL = "__top__";
 
@@ -103,6 +104,7 @@ function buildTree(folders: FolderRow[]): FolderNode[] {
 }
 
 export function FoldersSidebar() {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const currentFolder = useRouterState({
     select: (s) => {
@@ -156,9 +158,9 @@ export function FoldersSidebar() {
       await refresh();
       setNewName("");
       setCreateOpen(false);
-      toast.success(createParent ? "Subfolder created." : "Folder created.");
+      toast.success(createParent ? t("toast.subfolderCreated") : t("toast.folderCreated"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't create folder.");
+      toast.error(err instanceof Error ? err.message : t("toast.folderCreateErr"));
     } finally {
       setBusy(false);
     }
@@ -171,9 +173,9 @@ export function FoldersSidebar() {
       await renameFolder(renaming.id, renameName);
       await refresh();
       setRenaming(null);
-      toast.success("Folder renamed.");
+      toast.success(t("toast.folderRenamed"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't rename folder.");
+      toast.error(err instanceof Error ? err.message : t("toast.folderRenameErr"));
     } finally {
       setBusy(false);
     }
@@ -186,9 +188,9 @@ export function FoldersSidebar() {
       await deleteFolder(deleting.id);
       await refresh();
       setDeleting(null);
-      toast.success("Folder deleted. Its documents moved to Unfiled.");
+      toast.success(t("toast.folderDeleted"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't delete folder.");
+      toast.error(err instanceof Error ? err.message : t("toast.folderDeleteErr"));
     } finally {
       setBusy(false);
     }
@@ -206,9 +208,9 @@ export function FoldersSidebar() {
       await moveFolder(moving.id, moveTarget === TOP_LEVEL ? null : moveTarget);
       await refresh();
       setMoving(null);
-      toast.success("Folder moved.");
+      toast.success(t("toast.folderMoved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't move folder.");
+      toast.error(err instanceof Error ? err.message : t("toast.folderMoveErr"));
     } finally {
       setBusy(false);
     }
@@ -220,14 +222,14 @@ export function FoldersSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Library</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("sidebar.library")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={currentFolder === null} className={ACTIVE_RED}>
                   <Link to="/library" search={{ folder: undefined }}>
                     <Files className="h-4 w-4" />
-                    <span>All documents</span>
+                    <span>{t("sidebar.allDocuments")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -235,7 +237,7 @@ export function FoldersSidebar() {
                 <SidebarMenuButton asChild isActive={currentFolder === "unfiled"} className={ACTIVE_RED}>
                   <Link to="/library" search={{ folder: "unfiled" }}>
                     <Inbox className="h-4 w-4" />
-                    <span>Unfiled</span>
+                    <span>{t("sidebar.unfiled")}</span>
                     {unfiledCount > 0 && (
                       <span className="ml-auto text-xs opacity-70">{unfiledCount}</span>
                     )}
@@ -247,16 +249,16 @@ export function FoldersSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Folders</SidebarGroupLabel>
-          <SidebarGroupAction title="New folder" onClick={() => openCreate(null)}>
-            <Plus /> <span className="sr-only">New folder</span>
+          <SidebarGroupLabel>{t("sidebar.folders")}</SidebarGroupLabel>
+          <SidebarGroupAction title={t("sidebar.newFolder")} onClick={() => openCreate(null)}>
+            <Plus /> <span className="sr-only">{t("sidebar.newFolder")}</span>
           </SidebarGroupAction>
           <SidebarGroupContent>
             <SidebarMenu className="gap-[3mm]">
 
               {tree.length === 0 ? (
                 <p className="px-2 py-1.5 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-                  No folders yet.
+                  {t("sidebar.noFolders")}
                 </p>
               ) : (
                 tree.map((node) => (
@@ -286,22 +288,22 @@ export function FoldersSidebar() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {createParent ? `New subfolder in "${createParent.name}"` : "New folder"}
+              {createParent ? t("sidebar.newSubfolderIn", { name: createParent.name }) : t("sidebar.newFolder")}
             </DialogTitle>
           </DialogHeader>
           <Input
             autoFocus
             value={newName}
-            placeholder="Folder name"
+            placeholder={t("sidebar.folderNamePlaceholder")}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submitCreate()}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={submitCreate} disabled={busy || !newName.trim()}>
-              Create
+              {t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -311,7 +313,7 @@ export function FoldersSidebar() {
       <Dialog open={!!renaming} onOpenChange={(open) => !open && setRenaming(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename folder</DialogTitle>
+            <DialogTitle>{t("sidebar.renameFolder")}</DialogTitle>
           </DialogHeader>
           <Input
             autoFocus
@@ -321,10 +323,10 @@ export function FoldersSidebar() {
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenaming(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={submitRename} disabled={busy || !renameName.trim()}>
-              Save
+              {t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -334,16 +336,15 @@ export function FoldersSidebar() {
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{deleting?.name}"?</AlertDialogTitle>
+            <AlertDialogTitle>{t("sidebar.deleteFolderTitle", { name: deleting?.name ?? "" })}</AlertDialogTitle>
             <AlertDialogDescription>
-              The folder is removed. Documents inside it are kept and moved to Unfiled. Any
-              subfolders are also affected.
+              {t("sidebar.deleteFolderDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} disabled={busy}>
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -353,16 +354,16 @@ export function FoldersSidebar() {
       <Dialog open={!!moving} onOpenChange={(open) => !open && setMoving(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Move "{moving?.name}"</DialogTitle>
+            <DialogTitle>{t("sidebar.moveFolderTitle", { name: moving?.name ?? "" })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Choose a new parent folder.</p>
+            <p className="text-sm text-muted-foreground">{t("sidebar.moveFolderDesc")}</p>
             <Select value={moveTarget} onValueChange={setMoveTarget}>
               <SelectTrigger>
-                <SelectValue placeholder="Select destination" />
+                <SelectValue placeholder={t("sidebar.moveSelectDest")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={TOP_LEVEL}>Top level (no parent)</SelectItem>
+                <SelectItem value={TOP_LEVEL}>{t("sidebar.moveTopLevel")}</SelectItem>
                 {moveOptions.map((o) => (
                   <SelectItem key={o.id} value={o.id}>
                     {o.path}
@@ -373,10 +374,10 @@ export function FoldersSidebar() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMoving(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={submitMove} disabled={busy}>
-              Move
+              {t("sidebar.move")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -406,6 +407,7 @@ function FolderItem({
   onDelete: (f: FolderRow) => void;
   onMove: (f: FolderRow) => void;
 }) {
+  const { t } = useT();
   const active = currentFolder === node.id;
   const hasChildren = node.children.length > 0;
   // Expand if this node or any descendant is the active folder.
@@ -429,7 +431,7 @@ function FolderItem({
                 setOpen((v) => !v);
               }}
               className="shrink-0"
-              aria-label={open ? "Collapse" : "Expand"}
+              aria-label={open ? t("sidebar.collapse") : t("sidebar.expand")}
             >
               <ChevronRight
                 className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-90")}
@@ -451,25 +453,25 @@ function FolderItem({
         <DropdownMenuTrigger asChild>
           <SidebarMenuAction showOnHover>
             <MoreHorizontal />
-            <span className="sr-only">Folder actions</span>
+            <span className="sr-only">{t("sidebar.folderActions")}</span>
           </SidebarMenuAction>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start">
           <DropdownMenuItem onClick={() => onCreateSub(node)}>
-            <FolderPlus className="mr-2 h-4 w-4" /> New subfolder
+            <FolderPlus className="mr-2 h-4 w-4" /> {t("sidebar.newSubfolder")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onRename(node)}>
-            <Pencil className="mr-2 h-4 w-4" /> Rename
+            <Pencil className="mr-2 h-4 w-4" /> {t("sidebar.rename")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onMove(node)}>
-            <FolderInput className="mr-2 h-4 w-4" /> Move to…
+            <FolderInput className="mr-2 h-4 w-4" /> {t("sidebar.moveTo")}
           </DropdownMenuItem>
           {isAdmin && (
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={() => onDelete(node)}
             >
-              <Trash2 className="mr-2 h-4 w-4" /> Delete
+              <Trash2 className="mr-2 h-4 w-4" /> {t("common.delete")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>

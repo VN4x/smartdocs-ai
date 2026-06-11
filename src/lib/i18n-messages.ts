@@ -54,6 +54,12 @@ export const messages: Record<string, Entry> = {
   "sidebar.folderActions": { et: "Kausta toimingud", en: "Folder actions", ru: "Действия с папкой", fi: "Kansion toiminnot", lv: "Mapes darbības" },
   "sidebar.expand": { et: "Laienda", en: "Expand", ru: "Развернуть", fi: "Laajenna", lv: "Izvērst" },
   "sidebar.collapse": { et: "Ahenda", en: "Collapse", ru: "Свернуть", fi: "Tiivistä", lv: "Sakļaut" },
+  "sidebar.moveTo": { et: "Liiguta kausta…", en: "Move to…", ru: "Переместить в…", fi: "Siirrä kansioon…", lv: "Pārvietot uz…" },
+  "sidebar.moveFolderTitle": { et: "Liiguta „{name}”", en: 'Move "{name}"', ru: "Переместить «{name}»", fi: 'Siirrä "{name}"', lv: 'Pārvietot "{name}"' },
+  "sidebar.moveFolderDesc": { et: "Vali uus ülemkaust.", en: "Choose a new parent folder.", ru: "Выберите новую родительскую папку.", fi: "Valitse uusi yläkansio.", lv: "Izvēlieties jaunu vecākmapi." },
+  "sidebar.moveSelectDest": { et: "Vali sihtkoht", en: "Select destination", ru: "Выберите назначение", fi: "Valitse kohde", lv: "Izvēlieties galamērķi" },
+  "sidebar.moveTopLevel": { et: "Ülemine tase (ülemkaustata)", en: "Top level (no parent)", ru: "Верхний уровень (без родителя)", fi: "Ylin taso (ei yläkansiota)", lv: "Augšējais līmenis (bez vecākmapes)" },
+  "sidebar.move": { et: "Liiguta", en: "Move", ru: "Переместить", fi: "Siirrä", lv: "Pārvietot" },
 
   // ---- Sidebar toasts ----
   "toast.subfolderCreated": { et: "Alamkaust loodud.", en: "Subfolder created.", ru: "Подпапка создана.", fi: "Alikansio luotu.", lv: "Apakšmape izveidota." },
@@ -63,6 +69,8 @@ export const messages: Record<string, Entry> = {
   "toast.folderRenameErr": { et: "Kausta ei õnnestunud ümber nimetada.", en: "Couldn't rename folder.", ru: "Не удалось переименовать папку.", fi: "Kansiota ei voitu nimetä uudelleen.", lv: "Neizdevās pārdēvēt mapi." },
   "toast.folderDeleted": { et: "Kaust kustutatud. Selle dokumendid liigutati Sorteerimata alla.", en: "Folder deleted. Its documents moved to Unfiled.", ru: "Папка удалена. Её документы перемещены в «Без папки».", fi: "Kansio poistettu. Sen asiakirjat siirrettiin Lajittelematon-kansioon.", lv: "Mape dzēsta. Tās dokumenti pārvietoti uz Nešķiroti." },
   "toast.folderDeleteErr": { et: "Kausta ei õnnestunud kustutada.", en: "Couldn't delete folder.", ru: "Не удалось удалить папку.", fi: "Kansiota ei voitu poistaa.", lv: "Neizdevās dzēst mapi." },
+  "toast.folderMoved": { et: "Kaust liigutatud.", en: "Folder moved.", ru: "Папка перемещена.", fi: "Kansio siirretty.", lv: "Mape pārvietota." },
+  "toast.folderMoveErr": { et: "Kausta ei õnnestunud liigutada.", en: "Couldn't move folder.", ru: "Не удалось переместить папку.", fi: "Kansiota ei voitu siirtää.", lv: "Neizdevās pārvietot mapi." },
 
   // ---- Library ----
   "library.documents": { et: "Dokumendid", en: "Documents", ru: "Документы", fi: "Asiakirjat", lv: "Dokumenti" },
