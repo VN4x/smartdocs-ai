@@ -1,44 +1,64 @@
-# User management, folders & security hardening
+# Library upgrade: quick wins + server-side search & pagination
 
-## 1. How accounts work (answering your question)
-Today every person registers their **own** account — you do **not** share one login, and many people can be signed in at once on separate accounts. That stays. What changes is **who is allowed in** and **who can delete**.
+Two bundles, building on the existing code. Drag-and-drop and the heavier items (version history, audit log) are intentionally out of scope.
 
-- **Sign-in becomes magic-link only**, restricted to `@kvaliteetaken.ee` addresses.
-- **Self-service password signup is removed** so strangers/bots can't create accounts.
-- Passwords/tokens were already stored securely by Lovable Cloud (industry-standard hashing); nothing sensitive lives in the app code.
+## Bundle A — Quick wins (Low effort)
 
-## 2. Restrict signup to your company domain
-- Turn **off** open public signup in the auth settings, so the only way an account is created is through our gated flow.
-- A small **public server function** handles "send me a login link": it validates the email ends in `@kvaliteetaken.ee`, creates the account on first use (only for that domain), and emails the login link. Any other domain is rejected — and because the check runs on the server, it can't be bypassed from the browser.
-- The login page also checks the domain instantly for friendly feedback, and shows a clear "only @kvaliteetaken.ee" message.
-- Enable leaked-password protection (defense-in-depth, in case password login is added later).
+### A1. Wire i18n everywhere
 
-## 3. Admin role + "admin can delete"
-- Add a proper roles system (separate `user_roles` table + `app_role` enum + a `has_role` security-definer function — the safe pattern that avoids privilege-escalation).
-- **View:** any signed-in user can view and download all documents.
-- **Upload / edit metadata / move into folders:** any signed-in user.
-- **Delete documents:** **admins only** (enforced in the database, not just the UI — the delete button is hidden for non-admins and the policy blocks it server-side).
-- Bootstrap: your account is promoted to admin so you can manage from day one (I'll confirm which `@kvaliteetaken.ee` address is the admin when we build).
+All translation keys already exist in `i18n-messages.ts` (auth.*, sidebar.*, library.*, filter.*) in all 5 languages — no new keys needed. This is purely swapping hardcoded English for `t()` calls.
 
-## 4. Folders + sidebar
-- New `folders` table (name, optional parent for nesting). Documents get an optional `folder_id`.
-- **Left sidebar** (collapsible) lists folders, plus "All documents" and "Unfiled"; selecting one filters the library.
-- Any signed-in user can create/rename folders and move documents; deleting a folder is admin-only (documents inside fall back to "Unfiled", never lost).
-- Search keeps working across the current view.
+- `src/routes/auth.tsx` — add `useT()`, replace the ~10 literals (Team access, Check your email, Work email, Send login link, domain warnings, toasts) with existing `auth.*` keys.
+- `src/components/folders-sidebar.tsx` — add `useT()`, replace literals with existing `sidebar.*` / `toast.*` keys.
+- `src/routes/_authenticated/library.tsx` — add `useT()`, replace headings, counts, view-toggle labels, filter labels, empty/error states with existing `library.*` / `filter.*` keys.
 
-## 5. Security findings — test & fix
-The security scan flagged real issues. I'll fix each and re-run the scan to confirm:
+### A2. Thumbnails in the library grid
 
-- **Stored XSS (print)** — a document titled `</title><script>…` currently runs code in the print popup. Fix: HTML-escape the title (and any interpolated field) before writing the print window.
-- **SSRF (URL import)** — the "import from URL" server function can be pointed at internal addresses (e.g. cloud metadata `169.254.169.254`, `localhost`, private `10./192.168.` ranges). Fix: reject non-public hosts/IPs before fetching.
-- **Over-broad database policies** — tighten document **delete** to admins; keep view/insert/update scoped to signed-in users (documented as intentional for a shared team library).
-- **SQL injection** — not a risk: all queries go through the parameterized data layer. No change needed; included for completeness.
-- **Bot misuse / backdoors** — closed by disabling open signup + domain gating; service-role keys remain server-only; no hardcoded credentials.
+- After a page of documents loads, collect non-null `thumbnail_path` values and batch-request signed URLs via `supabase.storage.from("documents").createSignedUrls(paths, 3600)` (one round-trip), keyed in a small `useQuery`.
+- `DocCard` (large + small) renders the thumbnail `<img>` with `loading="lazy"` and an aspect-ratio frame; falls back to the current file-type icon/badge when there's no thumbnail or the image fails to load.
+- `DocRow` (list view) keeps the icon, unchanged.
+
+### A3. Filters in URL state
+
+Extend the existing `?folder=` search-param pattern so type/object/material/supplier/search/page persist in the URL (shareable, survive refresh, back-button friendly).
+
+- Expand `validateSearch` to include `q`, `tuup`, `objekt`, `materjal`, `supplier`, `page` (all optional, with defaults).
+- Replace the `useState` filter vars with `Route.useSearch()` + `useNavigate()` updates (`navigate({ search: prev => ({...prev, ...}) })`).
+- The search box updates the URL debounced (~300ms) so typing doesn't spam history.
+
+## Bundle B — Skip now, buld in future phsaes Server-side search + pagination (Medium effort)
+
+Removes the in-memory 1000-row cap and the client-side filtering loop. The browser client calls Postgres functions directly (RLS already lets authenticated users read documents).
+
+### B1. Database migration
+
+- Enable `unaccent` + an `IMMUTABLE` wrapper `public.f_unaccent(text)` (required so it can be used in a generated column).
+- Add a generated `STORED` `tsvector` column `search_tsv` on `documents` covering title, supplier, objekt, materjal, description, file_name, and tags, all run through `f_unaccent` so "tuup" matches "tüüp" (preserves today's diacritic-insensitive behavior).
+- `CREATE INDEX ... USING GIN(search_tsv)`.
+- `search_documents(...)` function (`SECURITY INVOKER`, so RLS still applies) taking query text, the four filter values, a folder-id array, an `unfiled` flag, plus `limit`/`offset`; returns a JSON object `{ rows, total }` (page rows + total match count for the pager). Query text is unaccented server-side before matching.
+- `document_filter_options()` function returning the distinct type/object/material/supplier value lists for the dropdowns (these can no longer be derived from a single page).
+- `GRANT EXECUTE` on both functions to `authenticated`.
+
+### B2. Library data layer (`src/lib/documents.ts`)
+
+- Add `searchDocuments(params)` → `supabase.rpc("search_documents", ...)`, returning `{ rows, total }`.
+- Add `getFilterOptions()` → `supabase.rpc("document_filter_options")`.
+- Keep `listDocuments` for any other caller, but the library page stops using it.
+
+### B3. Library page rewrite of the data flow
+
+- Folder scope: the client still resolves the selected folder + its descendant ids (existing `folderScope` logic) and passes that id array (or the `unfiled` flag) into `searchDocuments`.
+- `useQuery` keyed on all search params (`["documents", folder, q, tuup, objekt, materjal, supplier, page]`) calls `searchDocuments`; filter dropdowns come from a separate `getFilterOptions` query.
+- Pagination UI: fixed page size (60), Prev/Next + "Page X of Y" and total count, driven by the `page` URL param. The old `normalize()`/in-memory `filtered` block is removed.
+
+## Out of scope (deferred per decision)
+
+Sidebar drag-and-drop (the "Move to…" menu stays), version history, audit log, admin panel, bulk actions, ZIP export, QR sheet. Bundle B
 
 ## Technical notes
-- **DB migrations:** `user_roles` + `app_role` enum + `has_role()`; `folders` table with GRANTs + RLS; add `folder_id` to `documents`; replace `USING(true)`/`WITH CHECK(true)` delete policy with `has_role(auth.uid(),'admin')`.
-- **Auth:** disable public signup; public `createServerFn` for domain-gated magic-link request using the admin client; client-side domain validation in `auth.tsx`; magic-link-only UI (drop self-serve signup tab).
-- **XSS:** `escapeHtml()` helper applied in `documents.$id.tsx` print().
-- **SSRF:** host/IP allow-check in `fetch-url.functions.ts` (block loopback, RFC-1918, link-local/metadata, non-http(s)).
-- **Sidebar:** shadcn `Sidebar` in the `_authenticated` layout; folder CRUD in `documents.ts`; library filters by `folder_id`.
-- Re-run the security scan at the end and report results.
+
+- Bundle A is independent and can ship first; thumbnails and URL-state both touch `library.tsx`, so they're done in one pass with the i18n swap.
+- Bundle B is not built now, will later in future phases as changes how the library fetches data; A2/A3 are written against the paginated result shape so the two bundles compose cleanly.
+- `search_documents` uses `websearch_to_tsquery('simple', f_unaccent(q))` for forgiving multi-word queries; empty `q` returns all (filtered) rows ordered by `created_at desc`.
+- No change to RLS or grants on the `documents` table itself; only the two new functions get `EXECUTE` grants.
+- Generated `tsvector` backfills automatically for existing rows when the column is added.
