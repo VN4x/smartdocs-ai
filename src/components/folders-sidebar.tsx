@@ -288,22 +288,22 @@ export function FoldersSidebar() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {createParent ? `New subfolder in "${createParent.name}"` : "New folder"}
+              {createParent ? t("sidebar.newSubfolderIn", { name: createParent.name }) : t("sidebar.newFolder")}
             </DialogTitle>
           </DialogHeader>
           <Input
             autoFocus
             value={newName}
-            placeholder="Folder name"
+            placeholder={t("sidebar.folderNamePlaceholder")}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submitCreate()}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={submitCreate} disabled={busy || !newName.trim()}>
-              Create
+              {t("common.create")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -313,7 +313,7 @@ export function FoldersSidebar() {
       <Dialog open={!!renaming} onOpenChange={(open) => !open && setRenaming(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename folder</DialogTitle>
+            <DialogTitle>{t("sidebar.renameFolder")}</DialogTitle>
           </DialogHeader>
           <Input
             autoFocus
@@ -323,10 +323,10 @@ export function FoldersSidebar() {
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenaming(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={submitRename} disabled={busy || !renameName.trim()}>
-              Save
+              {t("common.save")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -336,16 +336,15 @@ export function FoldersSidebar() {
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{deleting?.name}"?</AlertDialogTitle>
+            <AlertDialogTitle>{t("sidebar.deleteFolderTitle", { name: deleting?.name ?? "" })}</AlertDialogTitle>
             <AlertDialogDescription>
-              The folder is removed. Documents inside it are kept and moved to Unfiled. Any
-              subfolders are also affected.
+              {t("sidebar.deleteFolderDesc")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} disabled={busy}>
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -355,16 +354,16 @@ export function FoldersSidebar() {
       <Dialog open={!!moving} onOpenChange={(open) => !open && setMoving(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Move "{moving?.name}"</DialogTitle>
+            <DialogTitle>{t("sidebar.moveFolderTitle", { name: moving?.name ?? "" })}</DialogTitle>
           </DialogHeader>
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Choose a new parent folder.</p>
+            <p className="text-sm text-muted-foreground">{t("sidebar.moveFolderDesc")}</p>
             <Select value={moveTarget} onValueChange={setMoveTarget}>
               <SelectTrigger>
-                <SelectValue placeholder="Select destination" />
+                <SelectValue placeholder={t("sidebar.moveSelectDest")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={TOP_LEVEL}>Top level (no parent)</SelectItem>
+                <SelectItem value={TOP_LEVEL}>{t("sidebar.moveTopLevel")}</SelectItem>
                 {moveOptions.map((o) => (
                   <SelectItem key={o.id} value={o.id}>
                     {o.path}
@@ -375,10 +374,10 @@ export function FoldersSidebar() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setMoving(null)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button onClick={submitMove} disabled={busy}>
-              Move
+              {t("sidebar.move")}
             </Button>
           </DialogFooter>
         </DialogContent>
