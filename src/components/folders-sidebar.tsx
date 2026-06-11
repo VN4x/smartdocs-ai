@@ -222,14 +222,14 @@ export function FoldersSidebar() {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Library</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("sidebar.library")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={currentFolder === null} className={ACTIVE_RED}>
                   <Link to="/library" search={{ folder: undefined }}>
                     <Files className="h-4 w-4" />
-                    <span>All documents</span>
+                    <span>{t("sidebar.allDocuments")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -237,7 +237,7 @@ export function FoldersSidebar() {
                 <SidebarMenuButton asChild isActive={currentFolder === "unfiled"} className={ACTIVE_RED}>
                   <Link to="/library" search={{ folder: "unfiled" }}>
                     <Inbox className="h-4 w-4" />
-                    <span>Unfiled</span>
+                    <span>{t("sidebar.unfiled")}</span>
                     {unfiledCount > 0 && (
                       <span className="ml-auto text-xs opacity-70">{unfiledCount}</span>
                     )}
@@ -249,16 +249,16 @@ export function FoldersSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Folders</SidebarGroupLabel>
-          <SidebarGroupAction title="New folder" onClick={() => openCreate(null)}>
-            <Plus /> <span className="sr-only">New folder</span>
+          <SidebarGroupLabel>{t("sidebar.folders")}</SidebarGroupLabel>
+          <SidebarGroupAction title={t("sidebar.newFolder")} onClick={() => openCreate(null)}>
+            <Plus /> <span className="sr-only">{t("sidebar.newFolder")}</span>
           </SidebarGroupAction>
           <SidebarGroupContent>
             <SidebarMenu className="gap-[3mm]">
 
               {tree.length === 0 ? (
                 <p className="px-2 py-1.5 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
-                  No folders yet.
+                  {t("sidebar.noFolders")}
                 </p>
               ) : (
                 tree.map((node) => (
