@@ -164,6 +164,20 @@ export async function getShareUrl(path: string): Promise<string> {
   return data.signedUrl;
 }
 
+/** Batch-create signed URLs for storage paths (e.g. grid thumbnails). */
+export async function getSignedUrls(paths: string[]): Promise<Record<string, string>> {
+  if (!paths.length) return {};
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrls(paths, 60 * 60);
+  if (error) throw error;
+  const map: Record<string, string> = {};
+  for (const item of data ?? []) {
+    if (item.path && item.signedUrl) map[item.path] = item.signedUrl;
+  }
+  return map;
+}
+
 // ---------------- Document types ----------------
 
 export async function listDocumentTypes(): Promise<DocumentTypeRow[]> {
