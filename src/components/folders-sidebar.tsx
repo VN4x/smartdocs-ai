@@ -73,6 +73,7 @@ import {
   FolderInput,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 const TOP_LEVEL = "__top__";
 
@@ -103,6 +104,7 @@ function buildTree(folders: FolderRow[]): FolderNode[] {
 }
 
 export function FoldersSidebar() {
+  const { t } = useT();
   const queryClient = useQueryClient();
   const currentFolder = useRouterState({
     select: (s) => {
