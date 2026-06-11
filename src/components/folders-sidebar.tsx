@@ -158,9 +158,9 @@ export function FoldersSidebar() {
       await refresh();
       setNewName("");
       setCreateOpen(false);
-      toast.success(createParent ? "Subfolder created." : "Folder created.");
+      toast.success(createParent ? t("toast.subfolderCreated") : t("toast.folderCreated"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't create folder.");
+      toast.error(err instanceof Error ? err.message : t("toast.folderCreateErr"));
     } finally {
       setBusy(false);
     }
@@ -173,9 +173,9 @@ export function FoldersSidebar() {
       await renameFolder(renaming.id, renameName);
       await refresh();
       setRenaming(null);
-      toast.success("Folder renamed.");
+      toast.success(t("toast.folderRenamed"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't rename folder.");
+      toast.error(err instanceof Error ? err.message : t("toast.folderRenameErr"));
     } finally {
       setBusy(false);
     }
@@ -188,9 +188,9 @@ export function FoldersSidebar() {
       await deleteFolder(deleting.id);
       await refresh();
       setDeleting(null);
-      toast.success("Folder deleted. Its documents moved to Unfiled.");
+      toast.success(t("toast.folderDeleted"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't delete folder.");
+      toast.error(err instanceof Error ? err.message : t("toast.folderDeleteErr"));
     } finally {
       setBusy(false);
     }
@@ -208,9 +208,9 @@ export function FoldersSidebar() {
       await moveFolder(moving.id, moveTarget === TOP_LEVEL ? null : moveTarget);
       await refresh();
       setMoving(null);
-      toast.success("Folder moved.");
+      toast.success(t("toast.folderMoved"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Couldn't move folder.");
+      toast.error(err instanceof Error ? err.message : t("toast.folderMoveErr"));
     } finally {
       setBusy(false);
     }
