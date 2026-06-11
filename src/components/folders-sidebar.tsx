@@ -407,6 +407,7 @@ function FolderItem({
   onDelete: (f: FolderRow) => void;
   onMove: (f: FolderRow) => void;
 }) {
+  const { t } = useT();
   const active = currentFolder === node.id;
   const hasChildren = node.children.length > 0;
   // Expand if this node or any descendant is the active folder.
@@ -430,7 +431,7 @@ function FolderItem({
                 setOpen((v) => !v);
               }}
               className="shrink-0"
-              aria-label={open ? "Collapse" : "Expand"}
+              aria-label={open ? t("sidebar.collapse") : t("sidebar.expand")}
             >
               <ChevronRight
                 className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-90")}
@@ -452,25 +453,25 @@ function FolderItem({
         <DropdownMenuTrigger asChild>
           <SidebarMenuAction showOnHover>
             <MoreHorizontal />
-            <span className="sr-only">Folder actions</span>
+            <span className="sr-only">{t("sidebar.folderActions")}</span>
           </SidebarMenuAction>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="start">
           <DropdownMenuItem onClick={() => onCreateSub(node)}>
-            <FolderPlus className="mr-2 h-4 w-4" /> New subfolder
+            <FolderPlus className="mr-2 h-4 w-4" /> {t("sidebar.newSubfolder")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onRename(node)}>
-            <Pencil className="mr-2 h-4 w-4" /> Rename
+            <Pencil className="mr-2 h-4 w-4" /> {t("sidebar.rename")}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => onMove(node)}>
-            <FolderInput className="mr-2 h-4 w-4" /> Move to…
+            <FolderInput className="mr-2 h-4 w-4" /> {t("sidebar.moveTo")}
           </DropdownMenuItem>
           {isAdmin && (
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={() => onDelete(node)}
             >
-              <Trash2 className="mr-2 h-4 w-4" /> Delete
+              <Trash2 className="mr-2 h-4 w-4" /> {t("common.delete")}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
