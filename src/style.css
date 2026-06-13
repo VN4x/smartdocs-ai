@@ -1,0 +1,66 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  color-scheme: dark;
+  --bg: #05060f;
+  --accent: #00f0ff;
+  --accent-dim: #00a8b3;
+  --danger: #ff3b6b;
+  --gold: #ffd166;
+  --text: #e8f4ff;
+  --muted: #7a8ca8;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 0%, #0d1530 0%, var(--bg) 55%);
+  font-family: "Rajdhani", system-ui, sans-serif;
+  color: var(--text);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+  gap: 0.75rem;
+}
+
+#game {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 2px solid rgba(0, 240, 255, 0.25);
+  border-radius: 8px;
+  box-shadow:
+    0 0 40px rgba(0, 240, 255, 0.12),
+    0 20px 60px rgba(0, 0, 0, 0.55);
+  background: #000;
+  cursor: crosshair;
+}
+
+#hud {
+  font-family: "Orbitron", monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+@media (max-width: 840px) {
+  #game {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+  }
+}
