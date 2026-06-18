@@ -186,6 +186,21 @@ function LibraryPage() {
 
   const hasFilters = Boolean(tuup || objekt || materjal || supplier || searchInput.trim());
 
+  const activeChips = useMemo(() => {
+    const chips: Array<{ key: keyof LibrarySearch; label: string; value: string }> = [];
+    if (q) chips.push({ key: "q", label: t("filter.type") && "", value: q });
+    if (tuup) chips.push({ key: "tuup", label: t("filter.type"), value: tuup });
+    if (objekt) chips.push({ key: "objekt", label: t("filter.object"), value: objekt });
+    if (materjal) chips.push({ key: "materjal", label: t("filter.material"), value: materjal });
+    if (supplier) chips.push({ key: "supplier", label: t("filter.supplier"), value: supplier });
+    return chips;
+  }, [q, tuup, objekt, materjal, supplier, t]);
+
+  function removeChip(key: keyof LibrarySearch) {
+    if (key === "q") setSearchInput("");
+    navigate({ search: (prev: LibrarySearch) => ({ ...prev, [key]: undefined, page: undefined }) });
+  }
+
   function clearFilters() {
     setSearchInput("");
     navigate({
@@ -200,6 +215,7 @@ function LibraryPage() {
       }),
     });
   }
+
 
   return (
     <div className="space-y-5">
