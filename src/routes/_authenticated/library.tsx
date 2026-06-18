@@ -306,12 +306,40 @@ function LibraryPage() {
         ) : null}
       </Card>
 
+      {activeChips.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {activeChips.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => removeChip(chip.key)}
+              className="inline-flex items-center gap-1 rounded-full border bg-muted/60 px-2.5 py-1 text-xs transition-colors hover:bg-muted"
+            >
+              {chip.key === "q" ? <Search className="h-3 w-3 text-muted-foreground" /> : null}
+              {chip.label ? <span className="text-muted-foreground">{chip.label}:</span> : null}
+              <span className="font-medium">{chip.value}</span>
+              <X className="h-3 w-3 text-muted-foreground" />
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {error ? (
         <Card className="p-8 text-center text-sm text-destructive">{t("library.loadError")}</Card>
       ) : isLoading ? (
-        <Card className="flex items-center justify-center p-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </Card>
+        <div
+          className={
+            view === "small"
+              ? "grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+              : view === "list"
+                ? "grid gap-2 md:grid-cols-2 xl:grid-cols-3"
+                : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+          }
+        >
+          {Array.from({ length: view === "list" ? 9 : 6 }).map((_, i) => (
+            <Skeleton key={i} className={view === "list" ? "h-12 w-full" : "h-44 w-full"} />
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <Card className="flex flex-col items-center gap-3 p-12 text-center">
           <FileText className="h-10 w-10 text-muted-foreground" />
