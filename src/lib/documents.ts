@@ -73,6 +73,68 @@ export async function listDocuments(): Promise<DocumentRow[]> {
   return data ?? [];
 }
 
+/** Page size used by the server-side search/pagination on the library page. */
+export const PAGE_SIZE = 60;
+
+export type DocumentSearchParams = {
+  q?: string;
+  tuup?: string;
+  objekt?: string;
+  materjal?: string;
+  supplier?: string;
+  /** Folder + descendant ids to scope to; null/undefined = all folders. */
+  folderIds?: string[] | null;
+  /** When true, only documents with no folder are returned. */
+  unfiled?: boolean;
+  page?: number;
+};
+
+export type DocumentSearchResult = { rows: DocumentRow[]; total: number };
+
+/** Server-side full-text search + pagination via the search_documents RPC. */
+export async function searchDocuments(
+  params: DocumentSearchParams,
+): Promise<DocumentSearchResult> {
+  const page = Math.max(1, params.page ?? 1);
+  const { data, error } = await supabase.rpc("search_documents", {
+    _q: params.q?.trim() || undefined,
+    _tuup: params.tuup || undefined,
+    _objekt: params.objekt || undefined,
+    _materjal: params.materjal || undefined,
+    _supplier: params.supplier || undefined,
+    _folder_ids: params.folderIds ?? undefined,
+    _unfiled: params.unfiled ?? false,
+    _limit: PAGE_SIZE,
+    _offset: (page - 1) * PAGE_SIZE,
+  });
+  if (error) throw error;
+  const raw = (data ?? []) as Array<Record<string, unknown>>;
+  const total = raw.length ? Number(raw[0].total_count ?? 0) : 0;
+  const rows = raw.map(({ total_count, ...rest }) => rest as unknown as DocumentRow);
+  return { rows, total };
+}
+
+export type FilterOptions = {
+  types: string[];
+  objects: string[];
+  materials: string[];
+  suppliers: string[];
+};
+
+/** Distinct type/object/material/supplier values for the filter dropdowns. */
+export async function getFilterOptions(): Promise<FilterOptions> {
+  const { data, error } = await supabase.rpc("document_filter_options");
+  if (error) throw error;
+  const o = (data ?? {}) as Partial<FilterOptions>;
+  return {
+    types: o.types ?? [],
+    objects: o.objects ?? [],
+    materials: o.materials ?? [],
+    suppliers: o.suppliers ?? [],
+  };
+}
+
+
 export async function getDocument(id: string): Promise<DocumentRow | null> {
   const { data, error } = await supabase
     .from("documents")
