@@ -47,6 +47,7 @@ export type Database = {
           mime_type: string | null
           objekt: string | null
           original_ext: string | null
+          search_tsv: unknown
           supplier: string | null
           tags: string[]
           tellimuse_kinnitus: string | null
@@ -71,6 +72,7 @@ export type Database = {
           mime_type?: string | null
           objekt?: string | null
           original_ext?: string | null
+          search_tsv?: unknown
           supplier?: string | null
           tags?: string[]
           tellimuse_kinnitus?: string | null
@@ -95,6 +97,7 @@ export type Database = {
           mime_type?: string | null
           objekt?: string | null
           original_ext?: string | null
+          search_tsv?: unknown
           supplier?: string | null
           tags?: string[]
           tellimuse_kinnitus?: string | null
@@ -176,13 +179,53 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      document_filter_options: { Args: never; Returns: Json }
       ensure_admin_for_email: { Args: { _email: string }; Returns: undefined }
+      f_unaccent: { Args: { "": string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      search_documents: {
+        Args: {
+          _folder_ids?: string[]
+          _limit?: number
+          _materjal?: string
+          _objekt?: string
+          _offset?: number
+          _q?: string
+          _supplier?: string
+          _tuup?: string
+          _unfiled?: boolean
+        }
+        Returns: {
+          created_at: string
+          description: string
+          doc_date: string
+          doc_number: number
+          file_name: string
+          file_path: string
+          file_size: number
+          folder_id: string
+          id: string
+          materjal: string
+          mime_type: string
+          objekt: string
+          original_ext: string
+          supplier: string
+          tags: string[]
+          tellimuse_kinnitus: string
+          thumbnail_path: string
+          title: string
+          total_count: number
+          tuup: string
+          updated_at: string
+          uploaded_by: string
+          uploaded_by_name: string
+        }[]
       }
     }
     Enums: {
