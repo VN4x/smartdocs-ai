@@ -188,7 +188,7 @@ function LibraryPage() {
 
   const activeChips = useMemo(() => {
     const chips: Array<{ key: keyof LibrarySearch; label: string; value: string }> = [];
-    if (q) chips.push({ key: "q", label: t("filter.type") && "", value: q });
+    if (q) chips.push({ key: "q", label: "", value: q });
     if (tuup) chips.push({ key: "tuup", label: t("filter.type"), value: tuup });
     if (objekt) chips.push({ key: "objekt", label: t("filter.object"), value: objekt });
     if (materjal) chips.push({ key: "materjal", label: t("filter.material"), value: materjal });
