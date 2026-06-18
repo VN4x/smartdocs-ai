@@ -442,13 +442,17 @@ function FilterSelect({
 
 function Thumb({ url, title, compact }: { url: string; title: string; compact: boolean }) {
   const [failed, setFailed] = useState(false);
-  if (failed) return null;
+  const box =
+    "overflow-hidden rounded-md border bg-muted " + (compact ? "aspect-[4/3]" : "aspect-video");
+  if (failed) {
+    return (
+      <div className={box + " flex items-center justify-center"}>
+        <FileText className="h-7 w-7 text-muted-foreground/60" />
+      </div>
+    );
+  }
   return (
-    <div
-      className={
-        "overflow-hidden rounded-md border bg-muted " + (compact ? "aspect-[4/3]" : "aspect-video")
-      }
-    >
+    <div className={box}>
       <img
         src={url}
         alt={title}
@@ -459,6 +463,7 @@ function Thumb({ url, title, compact }: { url: string; title: string; compact: b
     </div>
   );
 }
+
 
 function DocCard({
   doc,
