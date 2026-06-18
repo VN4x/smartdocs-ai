@@ -1,13 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
-  listDocuments,
+  searchDocuments,
+  getFilterOptions,
   listFolders,
-  distinctValues,
   extOf,
   formatDocNumber,
   getSignedUrls,
+  PAGE_SIZE,
   type DocumentRow,
 } from "@/lib/documents";
 import { useT } from "@/lib/i18n";
@@ -32,6 +33,8 @@ import {
   LayoutGrid,
   Grid2x2,
   List as ListIcon,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 type ViewMode = "large" | "small" | "list";
@@ -43,6 +46,7 @@ type LibrarySearch = {
   objekt?: string;
   materjal?: string;
   supplier?: string;
+  page?: number;
 };
 
 function str(v: unknown): string | undefined {
@@ -51,36 +55,29 @@ function str(v: unknown): string | undefined {
 
 export const Route = createFileRoute("/_authenticated/library")({
   head: () => ({ meta: [{ title: "Library · Document Library" }] }),
-  validateSearch: (search: Record<string, unknown>): LibrarySearch => ({
-    folder: typeof search.folder === "string" ? search.folder : undefined,
-    q: str(search.q),
-    tuup: str(search.tuup),
-    objekt: str(search.objekt),
-    materjal: str(search.materjal),
-    supplier: str(search.supplier),
-  }),
+  validateSearch: (search: Record<string, unknown>): LibrarySearch => {
+    const pageNum = Number(search.page);
+    return {
+      folder: typeof search.folder === "string" ? search.folder : undefined,
+      q: str(search.q),
+      tuup: str(search.tuup),
+      objekt: str(search.objekt),
+      materjal: str(search.materjal),
+      supplier: str(search.supplier),
+      page: Number.isFinite(pageNum) && pageNum > 1 ? Math.floor(pageNum) : undefined,
+    };
+  },
   component: LibraryPage,
 });
 
 const ALL = "__all__";
 
-/** Lowercase + strip diacritics so "tuup" matches "Tüüp", "soon" matches "söön", etc. */
-function normalize(value: string): string {
-  return value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
 function LibraryPage() {
   const { t } = useT();
   const navigate = useNavigate({ from: "/library" });
-  const { folder, q, tuup, objekt, materjal, supplier } = Route.useSearch();
+  const { folder, q, tuup, objekt, materjal, supplier, page } = Route.useSearch();
+  const currentPage = page ?? 1;
 
-  const { data: docs = [], isLoading, error } = useQuery({
-    queryKey: ["documents"],
-    queryFn: listDocuments,
-  });
   const { data: folders = [] } = useQuery({ queryKey: ["folders"], queryFn: listFolders });
 
   // Local search box value for snappy typing; URL is updated debounced below.
@@ -92,34 +89,29 @@ function LibraryPage() {
     setSearchInput(q ?? "");
   }, [q]);
 
-  // Debounce URL writes so typing doesn't spam history.
+  // Debounce URL writes so typing doesn't spam history; reset to page 1.
   useEffect(() => {
     const handle = setTimeout(() => {
       const next = searchInput.trim() || undefined;
-      if (next !== q) navigate({ search: (prev: LibrarySearch) => ({ ...prev, q: next }) });
+      if (next !== q) {
+        navigate({ search: (prev: LibrarySearch) => ({ ...prev, q: next, page: undefined }) });
+      }
     }, 300);
     return () => clearTimeout(handle);
   }, [searchInput, q, navigate]);
 
   function setFilter(key: keyof LibrarySearch, value: string) {
     const next = value === ALL ? undefined : value;
-    navigate({ search: (prev: LibrarySearch) => ({ ...prev, [key]: next }) });
+    navigate({ search: (prev: LibrarySearch) => ({ ...prev, [key]: next, page: undefined }) });
   }
 
-  const types = useMemo(() => distinctValues(docs, "tuup"), [docs]);
-  const objects = useMemo(() => distinctValues(docs, "objekt"), [docs]);
-  const materials = useMemo(() => distinctValues(docs, "materjal"), [docs]);
-  const suppliers = useMemo(() => distinctValues(docs, "supplier"), [docs]);
+  function goToPage(p: number) {
+    navigate({ search: (prev: LibrarySearch) => ({ ...prev, page: p > 1 ? p : undefined }) });
+  }
 
-  const folderName = useMemo(() => {
-    if (folder === "unfiled") return t("sidebar.unfiled");
-    if (folder) return folders.find((f) => f.id === folder)?.name ?? t("library.folder");
-    return null;
-  }, [folder, folders, t]);
-
-  // Selected folder + all its descendant subfolders.
-  const folderScope = useMemo(() => {
-    if (!folder || folder === "unfiled") return new Set<string>();
+  // Selected folder + all its descendant subfolders (ids passed to the server).
+  const folderIds = useMemo(() => {
+    if (!folder || folder === "unfiled") return null;
     const childrenOf = new Map<string, string[]>();
     for (const f of folders) {
       if (f.parent_id) {
@@ -136,47 +128,53 @@ function LibraryPage() {
       ids.add(id);
       for (const c of childrenOf.get(id) ?? []) stack.push(c);
     }
-    return ids;
+    return Array.from(ids);
   }, [folder, folders]);
 
-  // Documents scoped to the selected folder (before search/metadata filters).
-  const scoped = useMemo(() => {
-    if (folder === "unfiled") return docs.filter((d) => !d.folder_id);
-    if (folder) return docs.filter((d) => d.folder_id && folderScope.has(d.folder_id));
-    return docs;
-  }, [docs, folder, folderScope]);
+  const folderName = useMemo(() => {
+    if (folder === "unfiled") return t("sidebar.unfiled");
+    if (folder) return folders.find((f) => f.id === folder)?.name ?? t("library.folder");
+    return null;
+  }, [folder, folders, t]);
 
-  const filtered = useMemo(() => {
-    const query = normalize(searchInput.trim());
-    return scoped.filter((d) => {
-      if (tuup && d.tuup !== tuup) return false;
-      if (objekt && d.objekt !== objekt) return false;
-      if (materjal && d.materjal !== materjal) return false;
-      if (supplier && d.supplier !== supplier) return false;
-      if (!query) return true;
-      const haystack = normalize(
-        [
-          d.title,
-          d.description,
-          d.tuup,
-          d.tellimuse_kinnitus,
-          d.objekt,
-          d.materjal,
-          d.supplier,
-          d.file_name,
-          ...(d.tags ?? []),
-        ]
-          .filter(Boolean)
-          .join(" "),
-      );
-      return haystack.includes(query);
-    });
-  }, [scoped, searchInput, tuup, objekt, materjal, supplier]);
+  const { data: filterOptions } = useQuery({
+    queryKey: ["filter-options"],
+    queryFn: getFilterOptions,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  // Batch signed URLs for every thumbnail in the dataset (stable across filters).
+  const {
+    data: result,
+    isLoading,
+    isFetching,
+    error,
+  } = useQuery({
+    queryKey: [
+      "documents-search",
+      { folder, folderIds, q, tuup, objekt, materjal, supplier, page: currentPage },
+    ],
+    queryFn: () =>
+      searchDocuments({
+        q,
+        tuup,
+        objekt,
+        materjal,
+        supplier,
+        folderIds,
+        unfiled: folder === "unfiled",
+        page: currentPage,
+      }),
+    placeholderData: keepPreviousData,
+  });
+
+  const rows = result?.rows ?? [];
+  const total = result?.total ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // Batch signed URLs for the thumbnails on the current page.
   const thumbPaths = useMemo(
-    () => Array.from(new Set(docs.map((d) => d.thumbnail_path).filter(Boolean) as string[])),
-    [docs],
+    () => Array.from(new Set(rows.map((d) => d.thumbnail_path).filter(Boolean) as string[])),
+    [rows],
   );
   const { data: thumbUrls = {} } = useQuery({
     queryKey: ["thumb-urls", thumbPaths],
@@ -197,6 +195,7 @@ function LibraryPage() {
         objekt: undefined,
         materjal: undefined,
         supplier: undefined,
+        page: undefined,
       }),
     });
   }
@@ -209,9 +208,7 @@ function LibraryPage() {
             {folderName ?? t("library.documents")}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {isLoading
-              ? t("common.loading")
-              : t("library.count", { filtered: filtered.length, total: scoped.length })}
+            {isLoading ? t("common.loading") : t("library.total", { total })}
           </p>
         </div>
 
@@ -251,6 +248,9 @@ function LibraryPage() {
             placeholder={t("library.searchPlaceholder")}
             className="pl-9"
           />
+          {isFetching ? (
+            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+          ) : null}
         </div>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
           <FilterSelect
@@ -258,28 +258,28 @@ function LibraryPage() {
             allLabel={t("filter.allType")}
             value={tuup ?? ALL}
             onChange={(v) => setFilter("tuup", v)}
-            options={types}
+            options={filterOptions?.types ?? []}
           />
           <FilterSelect
             label={t("filter.object")}
             allLabel={t("filter.allObject")}
             value={objekt ?? ALL}
             onChange={(v) => setFilter("objekt", v)}
-            options={objects}
+            options={filterOptions?.objects ?? []}
           />
           <FilterSelect
             label={t("filter.material")}
             allLabel={t("filter.allMaterial")}
             value={materjal ?? ALL}
             onChange={(v) => setFilter("materjal", v)}
-            options={materials}
+            options={filterOptions?.materials ?? []}
           />
           <FilterSelect
             label={t("filter.supplier")}
             allLabel={t("filter.allSupplier")}
             value={supplier ?? ALL}
             onChange={(v) => setFilter("supplier", v)}
-            options={suppliers}
+            options={filterOptions?.suppliers ?? []}
           />
         </div>
         {hasFilters ? (
@@ -295,13 +295,13 @@ function LibraryPage() {
         <Card className="flex items-center justify-center p-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </Card>
-      ) : filtered.length === 0 ? (
+      ) : rows.length === 0 ? (
         <Card className="flex flex-col items-center gap-3 p-12 text-center">
           <FileText className="h-10 w-10 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            {docs.length === 0 ? t("library.empty") : t("library.noMatch")}
+            {hasFilters ? t("library.noMatch") : t("library.empty")}
           </p>
-          {docs.length === 0 ? (
+          {!hasFilters ? (
             <Button asChild>
               <Link to="/upload">
                 <Upload className="mr-1.5 h-4 w-4" /> {t("library.uploadDocument")}
@@ -309,29 +309,57 @@ function LibraryPage() {
             </Button>
           ) : null}
         </Card>
-      ) : view === "list" ? (
-        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((d) => (
-            <DocRow key={d.id} doc={d} />
-          ))}
-        </div>
       ) : (
-        <div
-          className={
-            view === "small"
-              ? "grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-              : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
-          }
-        >
-          {filtered.map((d) => (
-            <DocCard
-              key={d.id}
-              doc={d}
-              compact={view === "small"}
-              thumbUrl={d.thumbnail_path ? thumbUrls[d.thumbnail_path] : undefined}
-            />
-          ))}
-        </div>
+        <>
+          {view === "list" ? (
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+              {rows.map((d) => (
+                <DocRow key={d.id} doc={d} />
+              ))}
+            </div>
+          ) : (
+            <div
+              className={
+                view === "small"
+                  ? "grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                  : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+              }
+            >
+              {rows.map((d) => (
+                <DocCard
+                  key={d.id}
+                  doc={d}
+                  compact={view === "small"}
+                  thumbUrl={d.thumbnail_path ? thumbUrls[d.thumbnail_path] : undefined}
+                />
+              ))}
+            </div>
+          )}
+
+          {pageCount > 1 ? (
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => goToPage(currentPage - 1)}
+              >
+                <ChevronLeft className="mr-1 h-4 w-4" /> {t("library.prev")}
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {t("library.pageOf", { page: currentPage, pages: pageCount })}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= pageCount}
+                onClick={() => goToPage(currentPage + 1)}
+              >
+                {t("library.next")} <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </div>
+          ) : null}
+        </>
       )}
     </div>
   );
