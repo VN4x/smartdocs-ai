@@ -85,6 +85,10 @@ export const messages: Record<string, Entry> = {
   "library.loadError": { et: "Dokumentide laadimine ebaõnnestus. Palun värskenda lehte.", en: "Couldn't load documents. Please refresh.", ru: "Не удалось загрузить документы. Обновите страницу.", fi: "Asiakirjoja ei voitu ladata. Päivitä sivu.", lv: "Neizdevās ielādēt dokumentus. Lūdzu, atsvaidziniet." },
   "library.empty": { et: "Dokumente veel pole. Lae üles esimene.", en: "No documents yet. Upload your first one.", ru: "Документов пока нет. Загрузите первый.", fi: "Ei asiakirjoja vielä. Lataa ensimmäinen.", lv: "Vēl nav dokumentu. Augšupielādējiet pirmo." },
   "library.noMatch": { et: "Ükski dokument ei vasta filtritele.", en: "No documents match your filters.", ru: "Нет документов, соответствующих фильтрам.", fi: "Mikään asiakirja ei vastaa suodattimia.", lv: "Neviens dokuments neatbilst filtriem." },
+  "library.total": { et: "{total} dokumenti", en: "{total} documents", ru: "{total} документов", fi: "{total} asiakirjaa", lv: "{total} dokumenti" },
+  "library.pageOf": { et: "Lk {page} / {pages}", en: "Page {page} of {pages}", ru: "Стр. {page} из {pages}", fi: "Sivu {page} / {pages}", lv: "Lpp. {page} no {pages}" },
+  "library.prev": { et: "Eelmine", en: "Previous", ru: "Назад", fi: "Edellinen", lv: "Iepriekšējā" },
+  "library.next": { et: "Järgmine", en: "Next", ru: "Вперёд", fi: "Seuraava", lv: "Nākamā" },
 
   // ---- Filters ----
   "filter.type": { et: "Tüüp", en: "Type", ru: "Тип", fi: "Tyyppi", lv: "Tips" },
